@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+dist-ssr/
+*.local
+
+# Rust / Tauri build artifacts
+src-tauri/target/
+
+# Environment variables (SECRETS!)
+.env
+.env.*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.sw?
+
+# Scratch / temp
+scratch/
+.mimocode/
+
+# Compiled binaries (not source)
+*.exe
+*.dll
+*.pdb
+*.ilk
+*.exp
+*.lib
+*.ilk
+*.d
+*.icns
+
+# Build logs
+build_log.txt
+*.log
+
+# Scripts for local dev only
+start-claude.bat
+start-claude.ps1
+start-proxy.ps1
+_fix.py
