@@ -20,22 +20,19 @@ export default function HomeScreen() {
 
   const load = async () => {
     setLoading(true);
-    const token = await storage.cleanToken();
-    const r = await storage.getRecently();
-    const l = await storage.getLiked();
-    setRecently(r);
-    setLiked(l);
     try {
-      if (token) {
-        const tracks = await yandex.search('хиты', token);
-        setChartTracks(tracks);
-      }
+      const r = await storage.getRecently();
+      const l = await storage.getLiked();
+      setRecently(r);
+      setLiked(l);
     } catch {}
-    try {
-      const sc = await soundcloud.search('lofi hip hop');
-      setScTracks(sc);
-    } catch {}
-    setLoading(false);
+
+    const token = await storage.cleanToken().catch(() => '');
+
+    Promise.allSettled([
+      token ? yandex.search('хиты', token).then(setChartTracks).catch(() => {}) : Promise.resolve(),
+      soundcloud.search('lofi hip hop').then(setScTracks).catch(() => {}),
+    ]).finally(() => setLoading(false));
   };
 
   const playTrack = async (track, tracks) => {

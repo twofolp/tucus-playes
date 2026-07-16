@@ -1,4 +1,5 @@
 const BASE = 'https://api.music.yandex.net';
+const TIMEOUT = 10000;
 
 const headers = (token) => ({
   Authorization: `OAuth ${token}`,
@@ -7,6 +8,13 @@ const headers = (token) => ({
   Accept: 'application/json',
   'Accept-Language': 'ru,en',
 });
+
+const fetchJson = async (url, opts = {}) => {
+  const signal = AbortSignal.timeout(opts.timeout || TIMEOUT);
+  const res = await fetch(url, { ...opts, signal });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+};
 
 const parseTrack = (t) => {
   const id = t.id != null ? String(t.id) : null;
@@ -48,18 +56,14 @@ const parseArtist = (a) => {
 export const yandex = {
   async search(query, token) {
     const enc = encodeURIComponent(query);
-    const res = await fetch(`${BASE}/search?text=${enc}&type=track&page=0&pageSize=20`, { headers: headers(token) });
-    if (!res.ok) throw new Error(`Yandex search failed: ${res.status}`);
-    const json = await res.json();
+    const json = await fetchJson(`${BASE}/search?text=${enc}&type=track&page=0&pageSize=20`, { headers: headers(token) });
     const items = json.result?.tracks?.results || json.result?.tracks?.items || [];
     return items.map(parseTrack).filter(Boolean);
   },
 
   async searchAll(query, token) {
     const enc = encodeURIComponent(query);
-    const res = await fetch(`${BASE}/search?text=${enc}&type=all&page=0&pageSize=20`, { headers: headers(token) });
-    if (!res.ok) throw new Error('Search failed');
-    const json = await res.json();
+    const json = await fetchJson(`${BASE}/search?text=${enc}&type=all&page=0&pageSize=20`, { headers: headers(token) });
     const r = json.result || {};
     return {
       tracks: (r.tracks?.results || r.tracks?.items || []).map(parseTrack).filter(Boolean),
@@ -69,13 +73,12 @@ export const yandex = {
   },
 
   async getStreamUrl(trackId, token) {
-    const infoRes = await fetch(`${BASE}/tracks/${trackId}/download-info`, { headers: headers(token) });
-    const infoJson = await infoRes.json();
+    const infoJson = await fetchJson(`${BASE}/tracks/${trackId}/download-info`, { headers: headers(token) });
     const arr = infoJson.result || [];
     const info = arr.find(i => i.codec === 'mp3') || arr[0];
     if (!info?.downloadInfoUrl) throw new Error('No download info');
 
-    const xmlRes = await fetch(info.downloadInfoUrl, { headers: headers(token) });
+    const xmlRes = await fetch(info.downloadInfoUrl, { headers: headers(token), signal: AbortSignal.timeout(TIMEOUT) });
     const xml = await xmlRes.text();
     const extract = (tag) => {
       const m = xml.match(new RegExp(`<${tag}>(.*?)</${tag}>`));
@@ -85,15 +88,13 @@ export const yandex = {
     if (!host || !path || !ts || !s) throw new Error('Failed to parse XML');
 
     const pathClean = path.startsWith('/') ? path.slice(1) : path;
-    // Simple MD5 - we'll use a JS implementation
     const hash = await md5(`XGRlBW9FXlekgbPrRHuSiA${pathClean}${s}`);
     return `https://${host}/get-mp3/${hash}/${ts}${path}`;
   },
 
   async getPlaylist(owner, playlistId, token) {
     const h = { ...headers(token), 'X-Yandex-Music-Client': 'YandexMusic/Android' };
-    const res = await fetch(`${BASE}/users/${owner}/playlists/${playlistId}`, { headers: h });
-    const json = await res.json();
+    const json = await fetchJson(`${BASE}/users/${owner}/playlists/${playlistId}`, { headers: h });
     const r = json.result || {};
     const coverUri = r.cover?.uri || '';
     return {
@@ -107,30 +108,28 @@ export const yandex = {
 
   async getLikedTracks(token) {
     const uid = await getUid(token);
-    const res = await fetch(`${BASE}/users/${uid}/likes/tracks`, { headers: headers(token) });
-    const json = await res.json();
+    const json = await fetchJson(`${BASE}/users/${uid}/likes/tracks`, { headers: headers(token) });
     const tracks = json.result?.library?.tracks || [];
     const result = [];
     for (const item of tracks.slice(0, 30)) {
       if (item.id) {
-        const tRes = await fetch(`${BASE}/tracks/${item.id}`, { headers: headers(token) });
-        const tJson = await tRes.json();
-        const t = parseTrack(tJson.result?.[0]);
-        if (t) result.push(t);
+        try {
+          const tJson = await fetchJson(`${BASE}/tracks/${item.id}`, { headers: headers(token) });
+          const t = parseTrack(tJson.result?.[0]);
+          if (t) result.push(t);
+        } catch {}
       }
     }
     return result;
   },
 
   async getMyWave(token) {
-    const res = await fetch(`${BASE}/rotor/station/user:onyourwave/tracks`, { headers: headers(token) });
-    const json = await res.json();
+    const json = await fetchJson(`${BASE}/rotor/station/user:onyourwave/tracks`, { headers: headers(token) });
     return (json.result?.sequence || []).map(i => parseTrack(i.track)).filter(Boolean);
   },
 
   async getSimilar(trackId, token) {
-    const res = await fetch(`${BASE}/tracks/${trackId}/similar`, { headers: headers(token) });
-    const json = await res.json();
+    const json = await fetchJson(`${BASE}/tracks/${trackId}/similar`, { headers: headers(token) });
     return (json.result?.similarTracks || []).map(parseTrack).filter(Boolean);
   },
 
@@ -138,7 +137,7 @@ export const yandex = {
     const uid = await getUid(token);
     const body = JSON.stringify({ 'track-ids': [trackId] });
     const url = remove ? `${BASE}/users/${uid}/likes/tracks/remove` : `${BASE}/users/${uid}/likes/tracks/add-multiple`;
-    await fetch(url, { method: 'POST', headers: { ...headers(token), 'Content-Type': 'application/json' }, body });
+    await fetch(url, { method: 'POST', headers: { ...headers(token), 'Content-Type': 'application/json' }, body, signal: AbortSignal.timeout(TIMEOUT) });
   },
 
   async getLyrics(trackId, token) {
@@ -147,30 +146,31 @@ export const yandex = {
       `${BASE}/tracks/${trackId}/supplement`,
     ];
     for (const url of urls) {
-      const res = await fetch(url, { headers: headers(token) });
-      if (!res.ok) continue;
-      const json = await res.json();
-      const downloadUrl = json.result?.lyrics?.downloadUrl || json.result?.downloadUrl;
-      if (downloadUrl) {
-        const lrcRes = await fetch(downloadUrl);
-        const lrcText = await lrcRes.text();
-        const lines = parseLRC(lrcText);
-        if (lines.length) return lines;
-      }
-      const fullLyrics = json.result?.lyrics?.fullLyrics || json.result?.fullLyrics || json.result?.lyrics?.text;
-      if (fullLyrics) {
-        const lines = parseLRC(fullLyrics);
-        if (lines.length) return lines;
-        return fullLyrics.split('\n').filter(l => l.trim()).map(l => ({ text: l, time: null, duration: null }));
-      }
+      try {
+        const res = await fetch(url, { headers: headers(token), signal: AbortSignal.timeout(TIMEOUT) });
+        if (!res.ok) continue;
+        const json = await res.json();
+        const downloadUrl = json.result?.lyrics?.downloadUrl || json.result?.downloadUrl;
+        if (downloadUrl) {
+          const lrcRes = await fetch(downloadUrl, { signal: AbortSignal.timeout(TIMEOUT) });
+          const lrcText = await lrcRes.text();
+          const lines = parseLRC(lrcText);
+          if (lines.length) return lines;
+        }
+        const fullLyrics = json.result?.lyrics?.fullLyrics || json.result?.fullLyrics || json.result?.lyrics?.text;
+        if (fullLyrics) {
+          const lines = parseLRC(fullLyrics);
+          if (lines.length) return lines;
+          return fullLyrics.split('\n').filter(l => l.trim()).map(l => ({ text: l, time: null, duration: null }));
+        }
+      } catch {}
     }
     return [];
   },
 };
 
 async function getUid(token) {
-  const res = await fetch(`${BASE}/account/status`, { headers: headers(token) });
-  const json = await res.json();
+  const json = await fetchJson(`${BASE}/account/status`, { headers: headers(token) });
   return String(json.result?.account?.uid || '');
 }
 
