@@ -128,7 +128,7 @@ function parseLRC(text) {
 
 function cleanMeta(s) {
   return s
-    .replace(/(?i)\b(feat|ft|prod|with)\b.*/g, '')
+    .replace(/\b(feat|ft|prod|with)\b.*/gi, '')
     .replace(/\s*[\(\[][^\)]*[\)\]]/g, '')
     .replace(/[^\w\s']/g, ' ')
     .replace(/\s+/g, ' ')
