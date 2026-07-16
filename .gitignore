@@ -1,49 +1,66 @@
-# Dependencies
-node_modules/
+# Xcode
+*.xcodeproj/project.xcworkspace
+*.xcodeproj/xcuserdata
+*.xcworkspace/xcuserdata
+DerivedData/
+build/
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
 
-# Build output
-dist/
-dist-ssr/
-*.local
+# Swift Package Manager
+.build/
+Packages/
+Package.pins
+Package.resolved
 
-# Rust / Tauri build artifacts
-src-tauri/target/
+# CocoaPods
+Pods/
 
-# Environment variables (SECRETS!)
-.env
-.env.*
-
-# OS files
+# macOS
 .DS_Store
 Thumbs.db
 
+# Environment
+.env
+.env.*
+
 # Editor
-.vscode/*
-!.vscode/extensions.json
+.vscode/
 .idea/
 *.sw?
 
-# Scratch / temp
+# Misc
+*.log
+*.local
+
+# Old Tauri/web files (not needed for iOS)
+node_modules/
+dist/
 scratch/
 .mimocode/
+src/
+src-tauri/
 
-# Compiled binaries (not source)
+# Binaries
 *.exe
 *.dll
 *.pdb
-*.ilk
-*.exp
-*.lib
-*.ilk
-*.d
-*.icns
 
-# Build logs
-build_log.txt
-*.log
-
-# Scripts for local dev only
+# Dev scripts
 start-claude.bat
 start-claude.ps1
 start-proxy.ps1
 _fix.py
+build_log.txt
+*.log

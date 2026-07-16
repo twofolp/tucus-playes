@@ -1,7 +1,30 @@
-# Tauri + React
+# Tucus - Music Player
 
-This template should help get you started developing with Tauri and React in Vite.
+Native iOS music player built with SwiftUI.
 
-## Recommended IDE Setup
+## Features
 
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+- **Yandex Music** - Search, stream, playlists, My Wave, similar tracks, like/dislike
+- **SoundCloud** - Search, stream, charts, similar tracks
+- **Lyrics** - Synchronized lyrics with translation (LRCLIB + Yandex)
+- **Player** - Queue, shuffle, repeat, mini player, full-screen Now Playing
+- **Library** - Playlists, liked tracks, history
+- **Settings** - Yandex token, equalizer, theme
+
+## Requirements
+
+- Xcode 15+
+- iOS 17+
+- Mac with Apple Silicon or Intel
+
+## Build
+
+1. Open `Tucus.xcodeproj` in Xcode
+2. Select a simulator or device
+3. Press Cmd+R to build and run
+
+## Publish to App Store
+
+1. Join Apple Developer Program ($99/year)
+2. Configure signing in Xcode
+3. Archive and upload via Xcode Organizer
