@@ -1,0 +1,204 @@
+/* Apple Music-style Lyrics Renderer — Premium */
+
+/* ===== Container ===== */
+.lyrics-renderer {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 80px 24px 160px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 12%,
+    black 70%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 12%,
+    black 70%,
+    transparent 100%
+  );
+  height: 100%;
+  cursor: default;
+  user-select: none;
+}
+
+.lyrics-renderer::-webkit-scrollbar {
+  width: 0px;
+}
+
+/* ===== Line ===== */
+.lr-line {
+  padding: 10px 16px;
+  border-radius: 16px;
+  cursor: pointer;
+  transform-origin: left center;
+  will-change: transform, opacity;
+  transition: opacity 0.3s ease-out,
+              transform 0.35s cubic-bezier(0.34, 1.2, 0.64, 1);
+}
+
+.lr-line:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* Active line — Apple Music: fully visible, slightly scaled up */
+.lr-line--active {
+  /* Inline style handles this for smooth animation */
+}
+
+/* Past line */
+.lr-line--past {
+  /* Inline style handles this */
+}
+
+/* Plain text line (no timestamps) */
+.lr-line--plain {
+  opacity: 0.7 !important;
+  transform: none !important;
+  filter: none !important;
+  text-align: center;
+  font-weight: 500;
+}
+
+/* ===== Main Vocal Container ===== */
+.lr-main {
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.25;
+}
+
+/* ===== Word — CSS-driven smooth reveal ===== */
+.lr-word {
+  display: inline;
+  position: relative;
+  /* Smooth color from --p custom property updated by RAF at 60fps */
+  color: rgba(255, 255, 255, calc(0.1 + var(--p, 0) * 0.9));
+  text-shadow: none;
+  transition: none; /* NO CSS transition — RAF updates are already 60fps smooth */
+  will-change: color;
+  /* Subtle lift when revealing */
+  transform: translateY(calc((1 - var(--p, 0)) * -1px));
+}
+
+/* Word fully revealed */
+.lr-word--revealed {
+  color: #ffffff !important;
+  text-shadow: 0 0 30px rgba(255, 255, 255, 0.15);
+}
+
+/* ===== Translation ===== */
+.lr-translation {
+  margin-top: 6px;
+  font-size: 0.78em;
+  font-weight: 500;
+  opacity: 0.3;
+  transition: opacity 0.4s ease;
+  letter-spacing: 0;
+  line-height: 1.3;
+}
+
+.lr-line--active .lr-translation {
+  opacity: 0.65;
+}
+
+/* ===== Font Size Variants — Apple Music uses large sizes ===== */
+.lr-font-sm .lr-main { font-size: 18px; }
+.lr-font-md .lr-main { font-size: 24px; }
+.lr-font-lg .lr-main { font-size: 30px; }
+.lr-font-xl .lr-main { font-size: 36px; }
+
+/* ===== Style: Normal — classic Apple Music glow ===== */
+.lr-style-normal .lr-line--active {
+  text-shadow: 0 0 40px rgba(255, 255, 255, 0.25);
+}
+
+/* ===== Style: Scale — active line pops ===== */
+.lr-style-scale .lr-line--active {
+  /* Handled by inline styles for smooth spring animation */
+}
+
+/* ===== Style: Focus — clean fade on inactive ===== */
+.lr-style-focus .lr-line:not(.lr-line--active) {
+  opacity: 0.12 !important;
+}
+.lr-style-focus .lr-line--past {
+  opacity: 0.08 !important;
+}
+
+/* ===== Style: Neon — white glow ===== */
+.lr-style-neon .lr-line--active {
+  text-shadow: 0 0 8px #ffffff,
+               0 0 20px #ffffff,
+               0 0 40px rgba(255, 255, 255, 0.2);
+}
+
+/* ===== Loading ===== */
+.lr-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 12px;
+  opacity: 0.4;
+}
+
+.lr-loading__dots {
+  display: flex;
+  gap: 6px;
+}
+
+.lr-loading__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: lr-pulse 1.2s ease-in-out infinite;
+}
+
+.lr-loading__dot:nth-child(2) { animation-delay: 0.15s; }
+.lr-loading__dot:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes lr-pulse {
+  0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); }
+  40% { opacity: 1; transform: scale(1.1); }
+}
+
+/* ===== Empty state ===== */
+.lr-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 8px;
+  opacity: 0.3;
+  text-align: center;
+  padding: 20px;
+}
+
+.lr-empty__icon { opacity: 0.4; }
+.lr-empty__text { font-size: 14px; font-weight: 500; }
+.lr-empty__sub { font-size: 12px; opacity: 0.6; }
+
+.lr-empty__btn {
+  margin-top: 8px;
+  padding: 6px 16px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+  color: #fff;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.lr-empty__btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+}

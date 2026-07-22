@@ -1,30 +1,37 @@
-# Tucus - Music Player
+# 🎵 Tucus Music Player
 
-Native iOS music player built with SwiftUI.
+Ультимативный музыкальный плеер для Windows с поддержкой **Яндекс Музыки**, **VK Музыки**, **SoundCloud**, релизов **Риса за Творчество (RZT)**, эффектов **Wave/Aurora**, **Equalizer**, текстов песен и **Discord Rich Presence**.
 
-## Features
+---
 
-- **Yandex Music** - Search, stream, playlists, My Wave, similar tracks, like/dislike
-- **SoundCloud** - Search, stream, charts, similar tracks
-- **Lyrics** - Synchronized lyrics with translation (LRCLIB + Yandex)
-- **Player** - Queue, shuffle, repeat, mini player, full-screen Now Playing
-- **Library** - Playlists, liked tracks, history
-- **Settings** - Yandex token, equalizer, theme
+## 🚀 Быстрый запуск для пользователей (Установка в 1 клик)
 
-## Requirements
+Вы можете скачать и запустить готовую версию приложения без сборки:
 
-- Xcode 15+
-- iOS 17+
-- Mac with Apple Silicon or Intel
+1. **[Скачать Установщик Windows (Setup EXE)](./tucus-setup.exe)** — запускает стандартный мастер установки на любой ПК Windows.
+2. **[Скачать Портативную версию (Portable EXE)](./tucus-portable.exe)** — сразу готовое EXE-приложение без установки.
 
-## Build
+---
 
-1. Open `Tucus.xcodeproj` in Xcode
-2. Select a simulator or device
-3. Press Cmd+R to build and run
+## ✨ Основные возможности
+* **Новые Релизы RZT**: 100% стабильная лента свежих релизов с сайта risazatvorchestvo.com с воспроизведением через Яндекс Музыку.
+* **Официальные профили артистов**: Студийная дискография, HD обложки и статистика подписчиков (Spotify / SoundCloud).
+* **Мульти-артист выбор**: Меню выбора конкретного исполнителя при нажатии на трек с несколькими авторами.
+* **Discord Rich Presence**: Прямой прогресс-бар и статус прослушивания в Discord (*"Слушает музыку в tucus"*).
+* **Синхронизированные тексты песен**: Встроенный поиск текста с эффектом подсвечиваемой караоке-волны.
+* **Liquid Glass & Aurora UI**: Современный стеклянный интерфейс с адаптивной цветовой палитрой обложки.
 
-## Publish to App Store
+---
 
-1. Join Apple Developer Program ($99/year)
-2. Configure signing in Xcode
-3. Archive and upload via Xcode Organizer
+## 🛠 Сборка для разработчиков
+
+```bash
+# Установка зависимостей
+npm install
+
+# Запуск в режиме разработки
+npm run tauri dev
+
+# Сборка готового приложения и инсталляторов
+npm run tauri build
+```
