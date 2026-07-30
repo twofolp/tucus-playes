@@ -404,16 +404,22 @@ function App() {
   const [theme, setTheme] = useState(localStorage.getItem("app_theme") || "dark");
   const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
   const [isMiniPlayer, setIsMiniPlayer] = useState(false);
+  const [isExitingMiniPlayer, setIsExitingMiniPlayer] = useState(false);
   const prevSizeRef = useRef(null);
 
   const enterMiniPlayer = async () => {
+    setIsExitingMiniPlayer(false);
     setIsMiniPlayer(true);
     invoke("set_mini_player_mode", { enable: true }).catch(e => console.error("Mini player Rust command error:", e));
   };
 
   const exitMiniPlayer = async () => {
-    setIsMiniPlayer(false);
-    invoke("set_mini_player_mode", { enable: false }).catch(e => console.error("Mini player restore Rust command error:", e));
+    setIsExitingMiniPlayer(true);
+    setTimeout(() => {
+      setIsMiniPlayer(false);
+      setIsExitingMiniPlayer(false);
+      invoke("set_mini_player_mode", { enable: false }).catch(e => console.error("Mini player restore Rust command error:", e));
+    }, 320);
   };
   const [showSpeedDropdown, setShowSpeedDropdown] = useState(false);
   const [yandexToken, setYandexToken] = useState(localStorage.getItem("yandex_token") || "");
@@ -2636,7 +2642,7 @@ const openSoundCloudArtist = async (userId, artistName) => {
 
       {isMiniPlayer ? (
         <div
-          className="mini-player-container"
+          className={`mini-player-container ${isExitingMiniPlayer ? "mini-player-container--exiting" : ""}`}
           onMouseDown={(e) => {
             if (e.target.closest("button") || e.target.closest("input")) return;
             try { getCurrentWindow().startDragging(); } catch(err){}
