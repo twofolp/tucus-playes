@@ -5128,19 +5128,19 @@ input {
 }
 
 /* ==========================================================================
-   Apple Dynamic Island Splash Screen
+   Smooth 90-Degree Rotating Splash Screen
    ========================================================================== */
 .splash-overlay {
   position: fixed;
   inset: 0;
   z-index: 99999;
-  background: #07070a;
+  background: #060609;
   display: flex;
   align-items: center;
   justify-content: center;
   user-select: none;
   opacity: 1;
-  transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1);
   overflow: hidden;
 }
 
@@ -5151,18 +5151,18 @@ input {
 
 .splash-glow {
   position: absolute;
-  width: 320px;
-  height: 320px;
+  width: 420px;
+  height: 420px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(168, 85, 247, 0.28) 0%, rgba(139, 92, 246, 0.08) 45%, transparent 70%);
-  filter: blur(40px);
-  animation: splashPulseGlow 2s ease-in-out infinite alternate;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.12) 0%, rgba(168, 85, 247, 0.06) 40%, transparent 70%);
+  filter: blur(50px);
+  animation: splashPulseGlow 3s cubic-bezier(0.4, 0, 0.2, 1) infinite alternate;
   pointer-events: none;
 }
 
 @keyframes splashPulseGlow {
-  0% { transform: scale(0.85); opacity: 0.5; }
-  100% { transform: scale(1.2); opacity: 0.95; }
+  0% { transform: scale(0.85); opacity: 0.4; }
+  100% { transform: scale(1.15); opacity: 0.8; }
 }
 
 .splash-content {
@@ -5171,90 +5171,96 @@ input {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 18px;
+  gap: 22px;
 }
 
-/* Dynamic Island Container */
-.splash-island {
-  background: rgba(18, 18, 24, 0.85);
-  backdrop-filter: blur(24px) saturate(1.8);
-  -webkit-backdrop-filter: blur(24px) saturate(1.8);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6), 0 0 20px rgba(168, 85, 247, 0.15);
-  border-radius: 40px;
+/* Morphing Capsule Container */
+.splash-capsule {
+  position: relative;
+  background: rgba(22, 22, 30, 0.8);
+  backdrop-filter: blur(30px) saturate(1.8);
+  -webkit-backdrop-filter: blur(30px) saturate(1.8);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.7), 0 0 32px rgba(255, 255, 255, 0.05);
+  border-radius: 50px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 12px 22px;
-  min-width: 80px;
-  min-height: 44px;
-  transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  width: 140px;
+  height: 70px;
+  transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.splash-island--expanded {
-  padding: 10px;
-  border-radius: 22px;
-  min-width: 72px;
-  min-height: 72px;
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.7), 0 0 30px rgba(168, 85, 247, 0.25);
-  animation: islandPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+.splash-capsule--rotate,
+.splash-capsule--logo,
+.splash-capsule--fadeout {
+  width: 84px;
+  height: 84px;
+  border-radius: 24px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 40px rgba(168, 85, 247, 0.2);
 }
 
-@keyframes islandPop {
-  0% { transform: scale(0.7); }
-  100% { transform: scale(1); }
-}
-
-/* Minimalist Apple Dynamic Island Equalizer Bars */
-.splash-spectrum-bars {
+/* Spectrum Grid & 90-degree Rotation */
+.splash-spectrum-grid {
   display: flex;
   align-items: center;
-  gap: 4px;
-  height: 24px;
+  gap: 6px;
+  height: 48px;
+  transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.5s ease;
 }
 
-.splash-bar {
-  width: 3.5px;
+.splash-spectrum-grid--rotate,
+.splash-spectrum-grid--logo,
+.splash-spectrum-grid--fadeout {
+  transform: rotate(90deg) scale(0.6);
+  opacity: 0.15;
+}
+
+/* Larger, Medium-Slow Equalizer Bars */
+.splash-bar-large {
+  width: 5.5px;
   border-radius: 999px;
-  background: linear-gradient(180deg, #c084fc 0%, #a855f7 50%, #7e22ce 100%);
-  box-shadow: 0 0 8px rgba(168, 85, 247, 0.6);
-  animation: appleBarJump 0.8s ease-in-out infinite alternate;
+  background: linear-gradient(180deg, #ffffff 0%, #e9d5ff 50%, #c084fc 100%);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+  animation: smoothBarWave 1.6s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite alternate;
 }
 
-.splash-bar-1 { height: 14px; animation-delay: 0.0s; }
-.splash-bar-2 { height: 22px; animation-delay: 0.15s; }
-.splash-bar-3 { height: 10px; animation-delay: 0.3s; }
-.splash-bar-4 { height: 24px; animation-delay: 0.1s; }
-.splash-bar-5 { height: 16px; animation-delay: 0.25s; }
+.splash-bar-l1 { height: 26px; animation-delay: 0.0s; }
+.splash-bar-l2 { height: 44px; animation-delay: 0.3s; }
+.splash-bar-l3 { height: 20px; animation-delay: 0.6s; }
+.splash-bar-l4 { height: 48px; animation-delay: 0.2s; }
+.splash-bar-l5 { height: 30px; animation-delay: 0.5s; }
 
-@keyframes appleBarJump {
-  0% { height: 6px; }
-  50% { height: 24px; }
-  100% { height: 12px; }
+@keyframes smoothBarWave {
+  0% { height: 12px; }
+  50% { height: 48px; }
+  100% { height: 22px; }
 }
 
-/* Logo in Splash */
-.splash-logo-wrap {
-  width: 52px;
-  height: 52px;
-  border-radius: 14px;
+/* Logo Reveal Container */
+.splash-logo-reveal {
+  position: absolute;
+  inset: 6px;
+  border-radius: 18px;
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
-  animation: splashLogoAppear 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
+  transform: scale(0.7);
+  transition: opacity 0.6s ease 0.2s, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.1s;
 }
 
-@keyframes splashLogoAppear {
-  0% { opacity: 0; transform: scale(0.8); }
-  100% { opacity: 1; transform: scale(1); }
+.splash-logo-reveal--visible {
+  opacity: 1;
+  transform: scale(1);
 }
 
 .splash-logo-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 14px;
+  border-radius: 18px;
 }
 
 /* Brand Text Below */
@@ -5263,8 +5269,8 @@ input {
   flex-direction: column;
   align-items: center;
   opacity: 0;
-  transform: translateY(8px);
-  transition: all 0.4s ease 0.1s;
+  transform: translateY(12px);
+  transition: opacity 0.6s ease 0.3s, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.3s;
 }
 
 .splash-brand--visible {
@@ -5273,22 +5279,23 @@ input {
 }
 
 .splash-title {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 800;
-  letter-spacing: 2px;
-  background: linear-gradient(135deg, #ffffff 0%, #d8b4fe 50%, #a855f7 100%);
+  letter-spacing: 3px;
+  background: linear-gradient(135deg, #ffffff 0%, #f3e8ff 50%, #d8b4fe 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   text-transform: lowercase;
 }
 
 .splash-subtitle {
-  font-size: 10px;
+  font-size: 10.5px;
   font-weight: 600;
-  letter-spacing: 3px;
-  color: rgba(255, 255, 255, 0.4);
+  letter-spacing: 3.5px;
+  color: rgba(255, 255, 255, 0.45);
   text-transform: uppercase;
-  margin-top: 2px;
+  margin-top: 3px;
 }
+
 
 

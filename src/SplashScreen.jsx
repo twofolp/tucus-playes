@@ -2,29 +2,36 @@ import React, { useState, useEffect } from "react";
 import "./App.css";
 
 export default function SplashScreen({ onFinish }) {
-  const [stage, setStage] = useState("spectrum"); // "spectrum" -> "logo" -> "fadeout" -> "done"
+  // Stages: "wave" -> "rotate" -> "logo" -> "fadeout" -> "done"
+  const [stage, setStage] = useState("wave");
 
   useEffect(() => {
-    // Stage 1: Spectrum bouncing (0ms - 1050ms)
+    // Stage 1: Medium-slow wave bouncing (0ms - 1300ms)
     const t1 = setTimeout(() => {
-      setStage("logo");
-    }, 1050);
+      setStage("rotate");
+    }, 1300);
 
-    // Stage 2: Logo display (1050ms - 1850ms)
+    // Stage 2: 90-degree rotation & morphing into logo (1300ms - 2100ms)
     const t2 = setTimeout(() => {
-      setStage("fadeout");
-    }, 1850);
+      setStage("logo");
+    }, 2100);
 
-    // Stage 3: Complete fade out (2250ms)
+    // Stage 3: Logo hold & brand text reveal (2100ms - 2800ms)
     const t3 = setTimeout(() => {
+      setStage("fadeout");
+    }, 2800);
+
+    // Stage 4: Fadeout complete (3200ms)
+    const t4 = setTimeout(() => {
       setStage("done");
       if (onFinish) onFinish();
-    }, 2250);
+    }, 3200);
 
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
       clearTimeout(t3);
+      clearTimeout(t4);
     };
   }, [onFinish]);
 
@@ -32,27 +39,25 @@ export default function SplashScreen({ onFinish }) {
 
   return (
     <div className={`splash-overlay ${stage === "fadeout" ? "splash-overlay--fadeout" : ""}`}>
-      {/* Radial Background Glow */}
+      {/* Soft Ambient Glow */}
       <div className="splash-glow" />
 
       <div className="splash-content">
-        {/* Dynamic Island Style Container */}
-        <div className={`splash-island ${stage === "logo" || stage === "fadeout" ? "splash-island--expanded" : ""}`}>
+        {/* Morphing Capsule Container */}
+        <div className={`splash-capsule splash-capsule--${stage}`}>
           
-          {/* Phase 1: Minimalist Apple-style Spectrum */}
-          {stage === "spectrum" && (
-            <div className="splash-spectrum-bars">
-              <div className="splash-bar splash-bar-1" />
-              <div className="splash-bar splash-bar-2" />
-              <div className="splash-bar splash-bar-3" />
-              <div className="splash-bar splash-bar-4" />
-              <div className="splash-bar splash-bar-5" />
-            </div>
-          )}
+          {/* Audio Spectrum Bars (rotating 90 degrees during 'rotate' & 'logo' stage) */}
+          <div className={`splash-spectrum-grid splash-spectrum-grid--${stage}`}>
+            <div className="splash-bar-large splash-bar-l1" />
+            <div className="splash-bar-large splash-bar-l2" />
+            <div className="splash-bar-large splash-bar-l3" />
+            <div className="splash-bar-large splash-bar-l4" />
+            <div className="splash-bar-large splash-bar-l5" />
+          </div>
 
-          {/* Phase 2: Logo revealing */}
-          {(stage === "logo" || stage === "fadeout") && (
-            <div className="splash-logo-wrap">
+          {/* Logo revealing smoothly during rotation */}
+          {(stage === "rotate" || stage === "logo" || stage === "fadeout") && (
+            <div className={`splash-logo-reveal ${stage !== "wave" ? "splash-logo-reveal--visible" : ""}`}>
               <img src="/tucus_logo.png" alt="Tucus" className="splash-logo-img" />
             </div>
           )}
