@@ -14,7 +14,9 @@
       {
         "title": "tucus",
         "width": 1024,
-        "height": 720
+        "height": 720,
+        "decorations": false,
+        "transparent": true
       }
     ],
     "security": {

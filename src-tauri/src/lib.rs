@@ -3398,6 +3398,30 @@ fn set_proxy_url(proxy: String, state: tauri::State<'_, AppState>) {
 }
 
 #[tauri::command]
+fn minimize_app_window(window: tauri::Window) -> Result<(), String> {
+    window.minimize().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn toggle_maximize_app_window(window: tauri::Window) -> Result<(), String> {
+    if window.is_maximized().unwrap_or(false) {
+        window.unmaximize().map_err(|e| e.to_string())
+    } else {
+        window.maximize().map_err(|e| e.to_string())
+    }
+}
+
+#[tauri::command]
+fn close_app_window(window: tauri::Window) -> Result<(), String> {
+    window.close().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn drag_app_window(window: tauri::Window) -> Result<(), String> {
+    window.start_dragging().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 fn drag_mini_player(window: tauri::Window) -> Result<(), String> {
     window.start_dragging().map_err(|e| e.to_string())
 }
@@ -3473,6 +3497,10 @@ pub fn run() {
         })
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
+            minimize_app_window,
+            toggle_maximize_app_window,
+            close_app_window,
+            drag_app_window,
             drag_mini_player,
             set_mini_player_mode,
             greet,

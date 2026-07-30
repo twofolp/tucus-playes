@@ -9,7 +9,7 @@ import {
   ListMusic, Trash2, FolderPlus, Plus, Heart, ThumbsDown,
   List, X, Radio, ChevronRight, ChevronLeft, Clock, PlayCircle,
   Maximize2, Minimize2, Mic2, AlertCircle, Sliders, Disc, User, TrendingUp, Users, UserPlus, UserCheck,
-  CheckCircle, Info, Zap, Database, Palette, Share2, Globe, Shield, Terminal, Keyboard, Layers, Sparkles
+  CheckCircle, Info, Zap, Database, Palette, Share2, Globe, Shield, Terminal, Keyboard, Layers, Sparkles, Minus, Square
 } from "lucide-react";
 import "./App.css";
 import Aurora from "./Aurora";
@@ -2700,12 +2700,12 @@ const openSoundCloudArtist = async (userId, artistName) => {
             justifyContent: "space-between",
             padding: "10px 14px",
             color: "#ffffff",
-            background: "rgba(12, 12, 18, 0.92)",
-            backdropFilter: "blur(40px) saturate(2)",
-            WebkitBackdropFilter: "blur(40px) saturate(2)",
-            border: "1px solid rgba(255, 255, 255, 0.14)",
+            background: "rgba(12, 12, 18, 0.94)",
+            backdropFilter: "blur(40px) saturate(1.8)",
+            WebkitBackdropFilter: "blur(40px) saturate(1.8)",
+            border: "1px solid rgba(255, 255, 255, 0.12)",
             borderRadius: "18px",
-            boxShadow: "0 20px 50px rgba(0, 0, 0, 0.85), 0 0 30px rgba(168, 85, 247, 0.2)",
+            boxShadow: "0 20px 50px rgba(0, 0, 0, 0.85), 0 0 25px rgba(255, 255, 255, 0.1)",
             zIndex: 99999,
             height: "100%",
             width: "100%",
@@ -2722,8 +2722,8 @@ const openSoundCloudArtist = async (userId, artistName) => {
                 width: 6,
                 height: 6,
                 borderRadius: "50%",
-                background: isPlaying ? "#a855f7" : "rgba(255,255,255,0.3)",
-                boxShadow: isPlaying ? "0 0 8px #a855f7" : "none",
+                background: isPlaying ? "#ffffff" : "rgba(255,255,255,0.3)",
+                boxShadow: isPlaying ? "0 0 8px rgba(255,255,255,0.8)" : "none",
                 display: "inline-block"
               }} />
               <span>TUCUS MINI</span>
@@ -2766,13 +2766,13 @@ const openSoundCloudArtist = async (userId, artistName) => {
                   width: 32,
                   height: 32,
                   borderRadius: "50%",
-                  background: "linear-gradient(135deg, #ffffff 0%, #f3e8ff 100%)",
+                  background: "linear-gradient(135deg, #ffffff 0%, #e2e8f0 100%)",
                   color: "#000000",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   border: "none",
-                  boxShadow: "0 0 15px rgba(255,255,255,0.4)",
+                  boxShadow: "0 0 12px rgba(255,255,255,0.3)",
                   cursor: "pointer"
                 }} disabled={!currentTrack || isTrackLoading}>
                   {isTrackLoading ? (
@@ -2792,12 +2792,24 @@ const openSoundCloudArtist = async (userId, artistName) => {
             </div>
           )}
 
-          {/* Bottom Progress Row */}
+          {/* Bottom Draggable Seekbar */}
           <div style={{ display: "flex", alignItems: "center", gap: "8px", width: "100%" }}>
             <span style={{ fontSize: "9px", fontWeight: 600, color: "rgba(255,255,255,0.5)", minWidth: "22px", textAlign: "right" }}>{fmt(currentTime)}</span>
-            <div className="cinema-progress" onClick={handleSeek} style={{ flex: 1, height: "3.5px", background: "rgba(255,255,255,0.12)", borderRadius: "2px", overflow: "hidden", position: "relative", cursor: "pointer" }}>
-              <div className="cinema-progress-fill" style={{ width: `${pct}%`, height: "100%", background: "linear-gradient(90deg, #a855f7 0%, #c084fc 100%)" }} />
-            </div>
+            <input
+              type="range"
+              min="0"
+              max={duration || 100}
+              step="0.5"
+              value={currentTime || 0}
+              onChange={(e) => {
+                const val = parseFloat(e.target.value);
+                setCurrentTime(val);
+                const activeAudio = getActiveAudio();
+                if (activeAudio) activeAudio.currentTime = val;
+              }}
+              className="mini-seek-slider"
+              style={{ flex: 1 }}
+            />
             <span style={{ fontSize: "9px", fontWeight: 600, color: "rgba(255,255,255,0.5)", minWidth: "22px" }}>{fmt(duration)}</span>
           </div>
         </div>
@@ -3210,6 +3222,99 @@ const openSoundCloudArtist = async (userId, artistName) => {
       )}
 
       
+
+      {!isMiniPlayer && (
+        <div
+          className="app-titlebar"
+          onMouseDown={(e) => {
+            if (e.target.closest("button")) return;
+            invoke("drag_app_window").catch(() => {});
+          }}
+          style={{
+            height: "36px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "0 12px 0 16px",
+            background: "rgba(0, 0, 0, 0.3)",
+            backdropFilter: "blur(25px)",
+            WebkitBackdropFilter: "blur(25px)",
+            borderBottom: "1px solid rgba(255, 255, 255, 0.06)",
+            userSelect: "none",
+            position: "relative",
+            zIndex: 9999,
+            cursor: "grab"
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", fontWeight: 700, color: "rgba(255, 255, 255, 0.85)" }}>
+            <img src="/tucus_logo.png" alt="" style={{ width: 14, height: 14, borderRadius: 3 }} />
+            <span style={{ letterSpacing: "0.5px" }}>tucus</span>
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+            <button
+              className="titlebar-btn"
+              onClick={() => invoke("minimize_app_window").catch(() => {})}
+              title="Свернуть"
+              style={{
+                width: 32,
+                height: 26,
+                borderRadius: 6,
+                background: "transparent",
+                border: "none",
+                color: "rgba(255, 255, 255, 0.75)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                transition: "background 0.2s"
+              }}
+            >
+              <Minus size={13} />
+            </button>
+            <button
+              className="titlebar-btn"
+              onClick={() => invoke("toggle_maximize_app_window").catch(() => {})}
+              title="Развернуть"
+              style={{
+                width: 32,
+                height: 26,
+                borderRadius: 6,
+                background: "transparent",
+                border: "none",
+                color: "rgba(255, 255, 255, 0.75)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                transition: "background 0.2s"
+              }}
+            >
+              <Square size={11} />
+            </button>
+            <button
+              className="titlebar-btn titlebar-btn--close"
+              onClick={() => invoke("close_app_window").catch(() => {})}
+              title="Закрыть"
+              style={{
+                width: 32,
+                height: 26,
+                borderRadius: 6,
+                background: "transparent",
+                border: "none",
+                color: "rgba(255, 255, 255, 0.75)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                transition: "all 0.2s"
+              }}
+            >
+              <X size={14} />
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="layout" style={activeView === "wave" ? { gridTemplateColumns: "1fr" } : {}}>
         <aside className="sidebar glass-sidebar" style={activeView === "wave" ? { display: "none" } : {}}>
