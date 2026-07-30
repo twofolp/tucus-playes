@@ -3199,19 +3199,24 @@ input {
   box-shadow: var(--shadow-panel);
 }
 
-/* Page and playlist scrolling fixes */
+/* Page and playlist scrolling fixes with smooth glide physics */
 .main-content > div,
 .home-view,
 .search-results-view,
 .album-detail-view,
 .artist-detail-view,
-.settings-view {
+.settings-view,
+.track-list,
+.sidebar__playlist-list {
   display: flex;
   flex-direction: column;
   flex: 1;
   overflow-y: auto;
   min-height: 0;
-  padding-right: 4px;
+  padding-right: 6px;
+  scroll-behavior: smooth !important;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .main-content > div::-webkit-scrollbar,
@@ -3219,8 +3224,9 @@ input {
 .search-results-view::-webkit-scrollbar,
 .album-detail-view::-webkit-scrollbar,
 .artist-detail-view::-webkit-scrollbar,
-.settings-view::-webkit-scrollbar {
-  width: 4px;
+.settings-view::-webkit-scrollbar,
+.track-list::-webkit-scrollbar {
+  width: 5px;
 }
 
 .main-content > div::-webkit-scrollbar-thumb,
@@ -3228,9 +3234,38 @@ input {
 .search-results-view::-webkit-scrollbar-thumb,
 .album-detail-view::-webkit-scrollbar-thumb,
 .artist-detail-view::-webkit-scrollbar-thumb,
-.settings-view::-webkit-scrollbar-thumb {
-  background: var(--border-subtle);
-  border-radius: 2px;
+.settings-view::-webkit-scrollbar-thumb,
+.track-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+
+.main-content > div::-webkit-scrollbar-thumb:hover,
+.home-view::-webkit-scrollbar-thumb:hover,
+.search-results-view::-webkit-scrollbar-thumb:hover,
+.album-detail-view::-webkit-scrollbar-thumb:hover,
+.artist-detail-view::-webkit-scrollbar-thumb:hover,
+.settings-view::-webkit-scrollbar-thumb:hover,
+.track-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(168, 85, 247, 0.6);
+  box-shadow: 0 0 10px rgba(168, 85, 247, 0.5);
+}
+
+/* Gentle sliding transition on view change */
+.main-content > div {
+  animation: smoothViewGlide 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes smoothViewGlide {
+  0% {
+    opacity: 0;
+    transform: translateY(12px) scale(0.995);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 /* Ambient cover backdrop glowing layout */
