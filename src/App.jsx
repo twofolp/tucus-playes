@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback, memo } from "react";
 import ReactDOM from 'react-dom';
 import { invoke, convertFileSrc } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { getCurrentWindow, LogicalSize } from "@tauri-apps/api/window";
 import {
   Search, Play, Pause, SkipForward, SkipBack, Home,
   Volume2, VolumeX, Settings, Music, Shuffle, Repeat,
@@ -401,6 +402,35 @@ function App() {
   const [activeView, setActiveView] = useState("home");
   const [theme, setTheme] = useState(localStorage.getItem("app_theme") || "dark");
   const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
+  const [isMiniPlayer, setIsMiniPlayer] = useState(false);
+  const prevSizeRef = useRef(null);
+
+  const enterMiniPlayer = async () => {
+    try {
+      const win = getCurrentWindow();
+      const size = await win.innerSize();
+      prevSizeRef.current = size;
+      
+      await win.setDecorations(false);
+      await win.setSize(new LogicalSize(320, 135));
+      await win.setAlwaysOnTop(true);
+      setIsMiniPlayer(true);
+    } catch (e) {
+      console.error("Failed to enter mini player:", e);
+    }
+  };
+
+  const exitMiniPlayer = async () => {
+    try {
+      const win = getCurrentWindow();
+      await win.setDecorations(true);
+      await win.setSize(new LogicalSize(1024, 720));
+      await win.setAlwaysOnTop(false);
+      setIsMiniPlayer(false);
+    } catch (e) {
+      console.error("Failed to exit mini player:", e);
+    }
+  };
   const [showSpeedDropdown, setShowSpeedDropdown] = useState(false);
   const [yandexToken, setYandexToken] = useState(localStorage.getItem("yandex_token") || "");
   const [vkToken, setVkToken] = useState(() => localStorage.getItem("vk_token") || "");
@@ -2619,7 +2649,88 @@ const openSoundCloudArtist = async (userId, artistName) => {
         }}
         style={{ display: "none" }} />
 
-      {showNowPlaying && currentTrack && (() => {
+      {isMiniPlayer ? (
+        <div className="mini-player-container" style={{
+          position: "fixed",
+          inset: 0,
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "space-between",
+          padding: "12px",
+          color: "var(--text-primary)",
+          zIndex: 9999,
+          height: "100%",
+          boxSizing: "border-box"
+        }}>
+          {/* Draggable header region */}
+          <div data-tauri-drag-region className="mini-player-header" style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            fontSize: "10.5px",
+            opacity: 0.6,
+            marginBottom: "6px",
+            userSelect: "none"
+          }}>
+            <span data-tauri-drag-region style={{ fontWeight: 700, letterSpacing: "0.5px" }}>TUCUS MINI</span>
+            <button className="icon-btn" onClick={exitMiniPlayer} title="Развернуть" style={{ padding: 2, background: "none", border: "none", color: "var(--text-primary)", cursor: "pointer" }}>
+              <Maximize2 size={13}/>
+            </button>
+          </div>
+          
+          {/* Current track information */}
+          {currentTrack ? (
+            <div style={{ display: "flex", gap: "10px", alignItems: "center", flex: 1, minWidth: 0 }}>
+              <img src={currentTrack.thumbnail} alt="" style={{ width: "42px", height: "42px", borderRadius: "8px", objectFit: "cover", boxShadow: "0 4px 10px rgba(0,0,0,0.3)", flexShrink: 0 }} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: "12px", fontWeight: "700", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{currentTrack.title}</div>
+                <div style={{ fontSize: "10.5px", opacity: 0.6, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: "1px" }}>{currentTrack.artist}</div>
+              </div>
+            </div>
+          ) : (
+            <div style={{ display: "flex", flex: 1, alignItems: "center", justifyContent: "center", fontSize: "11px", opacity: 0.5 }}>
+              Нет воспроизведения
+            </div>
+          )}
+
+          {/* Progress bar and basic controls */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "4px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <span style={{ fontSize: "9px", opacity: 0.5, minWidth: "22px", textAlign: "right" }}>{fmt(currentTime)}</span>
+              <div className="cinema-progress" onClick={handleSeek} style={{ flex: 1, height: "3px", background: "rgba(255,255,255,0.12)", borderRadius: "2px", overflow: "hidden", position: "relative" }}>
+                <div className="cinema-progress-fill" style={{ width: `${pct}%`, height: "100%", background: "var(--accent)" }} />
+              </div>
+              <span style={{ fontSize: "9px", opacity: 0.5, minWidth: "22px" }}>{fmt(duration)}</span>
+            </div>
+            
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "16px" }}>
+              <button className="icon-btn" onClick={handlePrev} style={{ padding: 2, background: "none", border: "none", color: "var(--text-primary)", cursor: "pointer" }}><SkipBack size={13} fill="currentColor"/></button>
+              <button className="icon-btn" onClick={togglePlay} style={{
+                background: "var(--text-primary)",
+                color: "var(--bg-primary)",
+                borderRadius: "50%",
+                padding: "5px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                border: "none",
+                cursor: "pointer"
+              }} disabled={!currentTrack || isTrackLoading}>
+                {isTrackLoading ? (
+                  <div className="btn-spinner" style={{ width: 12, height: 12, border: "2px solid rgba(0,0,0,0.15)", borderTopColor: "currentColor" }} />
+                ) : isPlaying ? (
+                  <Pause size={12} fill="currentColor"/>
+                ) : (
+                  <Play size={12} fill="currentColor"/>
+                )}
+              </button>
+              <button className="icon-btn" onClick={handleNextClick} style={{ padding: 2, background: "none", border: "none", color: "var(--text-primary)", cursor: "pointer" }}><SkipForward size={13} fill="currentColor"/></button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <>
+          {showNowPlaying && currentTrack && (() => {
         const hasLyrics = lyrics && lyrics.length > 0;
         const showRightPanel = npTab === "similar" || (npTab === "lyrics" && hasLyrics);
 
@@ -4791,6 +4902,7 @@ const openSoundCloudArtist = async (userId, artistName) => {
               )}
             </div>
             {currentTrack&&<button className="ctrl-btn ctrl-btn--sm" onClick={()=>setShowNowPlaying(true)} title="Now Playing"><Maximize2 size={15}/></button>}
+            <button className="ctrl-btn ctrl-btn--sm" onClick={enterMiniPlayer} title="Мини-плеер"><Minimize2 size={15}/></button>
             {currentTrack&&lyrics&&lyrics.length>0&&<button className={`ctrl-btn ctrl-btn--sm ${npTab==="lyrics"&&showNowPlaying?"ctrl-btn--active":""}`} onClick={()=>{setNpTab("lyrics");setShowNowPlaying(true);}} title="Текст песни"><Mic2 size={15}/></button>}
             <button className={`ctrl-btn ctrl-btn--sm ${showEqModal?"ctrl-btn--active":""}`} onClick={()=>setShowEqModal(p=>!p)} title="Equalizer"><Sliders size={15}/></button>
             <button className={`ctrl-btn ctrl-btn--sm ${showQueue?"ctrl-btn--active":""}`} onClick={()=>setShowQueue(p=>!p)}><List size={15}/></button>
@@ -4799,6 +4911,8 @@ const openSoundCloudArtist = async (userId, artistName) => {
               onChange={e=>{setVolume(parseFloat(e.target.value));setIsMuted(false);}} onClick={e=>e.stopPropagation()}/>
           </div>
         </footer>
+      )}
+        </>
       )}
       {artistSelectTrack && (
         <div className="eq-modal" onClick={() => setArtistSelectTrack(null)}>

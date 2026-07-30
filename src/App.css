@@ -5098,3 +5098,32 @@ input {
   font-weight: 500;
 }
 
+/* Mini Player Styles */
+.mini-player-container {
+  background: rgba(8, 8, 12, 0.4);
+  backdrop-filter: blur(32px) saturate(2);
+  -webkit-backdrop-filter: blur(32px) saturate(2);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  user-select: none;
+}
+
+.mini-player-header {
+  height: 22px;
+  cursor: move;
+}
+
+.mini-player-container .cinema-progress {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  height: 3px;
+  cursor: pointer;
+}
+
+.mini-player-container .cinema-progress-fill {
+  background: var(--accent);
+  height: 100%;
+  border-radius: 2px;
+}
+
