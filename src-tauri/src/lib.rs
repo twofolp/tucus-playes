@@ -3398,10 +3398,15 @@ fn set_proxy_url(proxy: String, state: tauri::State<'_, AppState>) {
 }
 
 #[tauri::command]
+fn drag_mini_player(window: tauri::Window) -> Result<(), String> {
+    window.start_dragging().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 fn set_mini_player_mode(window: tauri::Window, enable: bool) -> Result<(), String> {
     if enable {
         let _ = window.set_decorations(false);
-        let _ = window.set_size(tauri::Size::Logical(tauri::LogicalSize { width: 300.0, height: 96.0 }));
+        let _ = window.set_size(tauri::Size::Logical(tauri::LogicalSize { width: 350.0, height: 110.0 }));
         let _ = window.set_always_on_top(true);
     } else {
         let _ = window.set_decorations(true);
@@ -3432,6 +3437,7 @@ pub fn run() {
         })
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
+            drag_mini_player,
             set_mini_player_mode,
             greet,
             search_yandex,

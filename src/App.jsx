@@ -2645,7 +2645,7 @@ const openSoundCloudArtist = async (userId, artistName) => {
           className={`mini-player-container ${isExitingMiniPlayer ? "mini-player-container--exiting" : ""}`}
           onMouseDown={(e) => {
             if (e.target.closest("button") || e.target.closest("input")) return;
-            try { getCurrentWindow().startDragging(); } catch(err){}
+            invoke("drag_mini_player").catch(() => {});
           }}
           style={{
             position: "fixed",
@@ -2653,36 +2653,44 @@ const openSoundCloudArtist = async (userId, artistName) => {
             display: "flex",
             flexDirection: "column",
             justifyContent: "space-between",
-            padding: "6px 10px",
-            color: "var(--text-primary)",
-            zIndex: 9999,
+            padding: "8px 12px",
+            color: "#ffffff",
+            background: "rgba(16, 16, 24, 0.94)",
+            backdropFilter: "blur(28px) saturate(1.8)",
+            WebkitBackdropFilter: "blur(28px) saturate(1.8)",
+            border: "1px solid rgba(255, 255, 255, 0.14)",
+            borderRadius: "14px",
+            boxShadow: "0 16px 40px rgba(0, 0, 0, 0.8), 0 0 25px rgba(168, 85, 247, 0.15)",
+            zIndex: 99999,
             height: "100%",
+            width: "100%",
             boxSizing: "border-box",
             cursor: "grab",
-            userSelect: "none"
+            userSelect: "none",
+            overflow: "hidden"
           }}
         >
           {/* Main Controls Row */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", flex: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px", width: "100%", minWidth: 0 }}>
             {currentTrack ? (
-              <div style={{ display: "flex", gap: "8px", alignItems: "center", flex: 1, minWidth: 0 }}>
-                <img src={currentTrack.thumbnail} alt="" style={{ width: "36px", height: "36px", borderRadius: "6px", objectFit: "cover", flexShrink: 0 }} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: "11.5px", fontWeight: "700", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{currentTrack.title}</div>
-                  <div style={{ fontSize: "10px", opacity: 0.6, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: "1px" }}>{currentTrack.artist}</div>
+              <div style={{ display: "flex", gap: "8px", alignItems: "center", minWidth: 0, flex: 1 }}>
+                <img src={currentTrack.thumbnail} alt="" style={{ width: "38px", height: "38px", borderRadius: "8px", objectFit: "cover", flexShrink: 0, boxShadow: "0 4px 10px rgba(0,0,0,0.4)" }} />
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{ fontSize: "12px", fontWeight: "700", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "#ffffff" }}>{currentTrack.title}</div>
+                  <div style={{ fontSize: "10.5px", opacity: 0.65, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: "1px", color: "rgba(255,255,255,0.7)" }}>{currentTrack.artist}</div>
                 </div>
               </div>
             ) : (
-              <div style={{ flex: 1, fontSize: "11px", opacity: 0.5 }}>Нет воспроизведения</div>
+              <div style={{ flex: 1, fontSize: "11px", opacity: 0.5 }}>Нет трека</div>
             )}
 
-            <div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0 }}>
-              <button className="icon-btn" onClick={handlePrev} style={{ padding: 3, background: "none", border: "none", color: "var(--text-primary)", cursor: "pointer" }}><SkipBack size={12} fill="currentColor"/></button>
+            <div style={{ display: "flex", alignItems: "center", gap: "5px", flexShrink: 0 }}>
+              <button className="icon-btn" onClick={handlePrev} style={{ padding: 4, background: "none", border: "none", color: "#ffffff", cursor: "pointer" }}><SkipBack size={13} fill="currentColor"/></button>
               <button className="icon-btn" onClick={togglePlay} style={{
-                background: "var(--text-primary)",
-                color: "var(--bg-primary)",
+                background: "#ffffff",
+                color: "#000000",
                 borderRadius: "50%",
-                padding: "4px",
+                padding: "5px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -2690,30 +2698,30 @@ const openSoundCloudArtist = async (userId, artistName) => {
                 cursor: "pointer"
               }} disabled={!currentTrack || isTrackLoading}>
                 {isTrackLoading ? (
-                  <div className="btn-spinner" style={{ width: 10, height: 10, border: "2px solid rgba(0,0,0,0.15)", borderTopColor: "currentColor" }} />
+                  <div className="btn-spinner" style={{ width: 11, height: 11, border: "2px solid rgba(0,0,0,0.2)", borderTopColor: "#000000" }} />
                 ) : isPlaying ? (
-                  <Pause size={11} fill="currentColor"/>
+                  <Pause size={12} fill="currentColor"/>
                 ) : (
-                  <Play size={11} fill="currentColor"/>
+                  <Play size={12} fill="currentColor"/>
                 )}
               </button>
-              <button className="icon-btn" onClick={handleNextClick} style={{ padding: 3, background: "none", border: "none", color: "var(--text-primary)", cursor: "pointer" }}><SkipForward size={12} fill="currentColor"/></button>
+              <button className="icon-btn" onClick={handleNextClick} style={{ padding: 4, background: "none", border: "none", color: "#ffffff", cursor: "pointer" }}><SkipForward size={13} fill="currentColor"/></button>
 
-              <div style={{ width: 1, height: 14, background: "rgba(255,255,255,0.15)", margin: "0 2px" }} />
+              <div style={{ width: 1, height: 16, background: "rgba(255,255,255,0.18)", margin: "0 3px" }} />
 
-              <button className="icon-btn" onClick={exitMiniPlayer} title="Развернуть" style={{ padding: 3, background: "none", border: "none", color: "var(--text-primary)", cursor: "pointer" }}>
-                <Maximize2 size={12}/>
+              <button className="icon-btn" onClick={exitMiniPlayer} title="Развернуть" style={{ padding: 4, background: "none", border: "none", color: "#ffffff", cursor: "pointer" }}>
+                <Maximize2 size={13}/>
               </button>
             </div>
           </div>
 
-          {/* Bottom Seekbar */}
-          <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "2px" }}>
-            <span style={{ fontSize: "8.5px", opacity: 0.5, minWidth: "20px", textAlign: "right" }}>{fmt(currentTime)}</span>
-            <div className="cinema-progress" onClick={handleSeek} style={{ flex: 1, height: "3px", background: "rgba(255,255,255,0.12)", borderRadius: "2px", overflow: "hidden", position: "relative", cursor: "pointer" }}>
+          {/* Bottom Progress Bar */}
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", width: "100%", marginTop: "4px" }}>
+            <span style={{ fontSize: "9px", opacity: 0.55, minWidth: "22px", textAlign: "right" }}>{fmt(currentTime)}</span>
+            <div className="cinema-progress" onClick={handleSeek} style={{ flex: 1, height: "3.5px", background: "rgba(255,255,255,0.14)", borderRadius: "2px", overflow: "hidden", position: "relative", cursor: "pointer" }}>
               <div className="cinema-progress-fill" style={{ width: `${pct}%`, height: "100%", background: "var(--accent)" }} />
             </div>
-            <span style={{ fontSize: "8.5px", opacity: 0.5, minWidth: "20px" }}>{fmt(duration)}</span>
+            <span style={{ fontSize: "9px", opacity: 0.55, minWidth: "22px" }}>{fmt(duration)}</span>
           </div>
         </div>
       ) : (
