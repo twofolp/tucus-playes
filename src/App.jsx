@@ -19,6 +19,7 @@ import WaveView from "./WaveView";
 import { extractCoverPalette } from "./coverColors";
 import { analyzeListeningHistory } from "./recommendations";
 import { loadHomeRecommendations } from "./homeLoader";
+import SplashScreen from "./SplashScreen";
 
 
 class ErrorBoundary extends React.Component {
@@ -2564,6 +2565,7 @@ const openSoundCloudArtist = async (userId, artistName) => {
   return (
     <ErrorBoundary>
     <div className="app-root" onClick={() => setSelectedTrackForPlaylist(null)}>
+      <SplashScreen />
       {bgType === "blur" && (
         <div className="ambient-background-backdrop" style={{
           position: "absolute",
