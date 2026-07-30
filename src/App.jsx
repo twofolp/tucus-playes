@@ -402,26 +402,18 @@ const soundcloudGenres = [
 function App() {
   const [activeView, setActiveView] = useState("home");
   const [theme, setTheme] = useState(localStorage.getItem("app_theme") || "dark");
-  const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
   const [isMiniPlayer, setIsMiniPlayer] = useState(false);
-  const [isExitingMiniPlayer, setIsExitingMiniPlayer] = useState(false);
   const prevSizeRef = useRef(null);
 
   const enterMiniPlayer = async () => {
-    setIsExitingMiniPlayer(false);
     setIsMiniPlayer(true);
     invoke("set_mini_player_mode", { enable: true }).catch(e => console.error("Mini player Rust command error:", e));
   };
 
   const exitMiniPlayer = async () => {
-    setIsExitingMiniPlayer(true);
-    setTimeout(() => {
-      setIsMiniPlayer(false);
-      setIsExitingMiniPlayer(false);
-      invoke("set_mini_player_mode", { enable: false }).catch(e => console.error("Mini player restore Rust command error:", e));
-    }, 320);
+    setIsMiniPlayer(false);
+    invoke("set_mini_player_mode", { enable: false }).catch(e => console.error("Mini player restore Rust command error:", e));
   };
-  const [showSpeedDropdown, setShowSpeedDropdown] = useState(false);
   const [yandexToken, setYandexToken] = useState(localStorage.getItem("yandex_token") || "");
   const [vkToken, setVkToken] = useState(() => localStorage.getItem("vk_token") || "");
   const [showVkHome, setShowVkHome] = useState(() => localStorage.getItem("show_vk_home") !== "false");
@@ -767,12 +759,6 @@ function App() {
     if (audio1Ref.current) audio1Ref.current.volume = isMuted ? 0 : volume;
     if (audio2Ref.current) audio2Ref.current.volume = isMuted ? 0 : volume;
   }, [volume, isMuted]);
-
-  // Keep both audio elements synchronized in speed
-  useEffect(() => {
-    if (audio1Ref.current) audio1Ref.current.playbackRate = playbackSpeed;
-    if (audio2Ref.current) audio2Ref.current.playbackRate = playbackSpeed;
-  }, [playbackSpeed]);
 
   const closeNowPlayingWithAnim = () => {
     setIsClosingNowPlaying(true);
@@ -1871,7 +1857,6 @@ const getCleanYandexToken = () => {
 
         const newActiveAudio = nextPlayer === 1 ? audio1Ref.current : audio2Ref.current;
         newActiveAudio.currentTime = 0;
-        newActiveAudio.playbackRate = playbackSpeed;
 
         await newActiveAudio.play().catch(err => {
           if (err.name !== "AbortError") console.error("Play error:", err);
@@ -1882,7 +1867,6 @@ const getCleanYandexToken = () => {
         activeAudio.currentTime = 0;
         activeAudio.src = streamUrl;
         activeAudio.load();
-        activeAudio.playbackRate = playbackSpeed;
 
         await activeAudio.play().catch(async (err) => {
           if (err.name !== "AbortError") {
@@ -2356,7 +2340,6 @@ const openSoundCloudArtist = async (userId, artistName) => {
     const player = playerNum === 1 ? audio1Ref.current : audio2Ref.current;
     if (player) {
       setDuration(player.duration);
-      player.playbackRate = playbackSpeed;
     }
   };
 
@@ -2603,7 +2586,6 @@ const openSoundCloudArtist = async (userId, artistName) => {
         ref={audio1Ref}
         onTimeUpdate={() => handleTimeUpdate(1)}
         onLoadedMetadata={() => handleLoadedMetadata(1)}
-        onPlay={() => { if (audio1Ref.current) audio1Ref.current.playbackRate = playbackSpeed; }}
         onEnded={() => handleEnded(1)}
         onStalled={() => { if (activePlayer === 1 && isPlaying && audio1Ref.current) { audio1Ref.current.play().catch(()=>{}); } }}
         onWaiting={() => { if (activePlayer === 1 && isPlaying && audio1Ref.current) { audio1Ref.current.play().catch(()=>{}); } }}
@@ -2624,7 +2606,6 @@ const openSoundCloudArtist = async (userId, artistName) => {
         ref={audio2Ref}
         onTimeUpdate={() => handleTimeUpdate(2)}
         onLoadedMetadata={() => handleLoadedMetadata(2)}
-        onPlay={() => { if (audio2Ref.current) audio2Ref.current.playbackRate = playbackSpeed; }}
         onEnded={() => handleEnded(2)}
         onStalled={() => { if (activePlayer === 2 && isPlaying && audio2Ref.current) { audio2Ref.current.play().catch(()=>{}); } }}
         onWaiting={() => { if (activePlayer === 2 && isPlaying && audio2Ref.current) { audio2Ref.current.play().catch(()=>{}); } }}
@@ -2642,7 +2623,7 @@ const openSoundCloudArtist = async (userId, artistName) => {
 
       {isMiniPlayer ? (
         <div
-          className={`mini-player-container ${isExitingMiniPlayer ? "mini-player-container--exiting" : ""}`}
+          className="mini-player-container"
           onMouseDown={(e) => {
             if (e.target.closest("button") || e.target.closest("input")) return;
             invoke("drag_mini_player").catch(() => {});
@@ -2653,42 +2634,61 @@ const openSoundCloudArtist = async (userId, artistName) => {
             display: "flex",
             flexDirection: "column",
             justifyContent: "space-between",
-            padding: "8px 12px",
-            color: "#ffffff",
-            background: "rgba(16, 16, 24, 0.94)",
-            backdropFilter: "blur(28px) saturate(1.8)",
-            WebkitBackdropFilter: "blur(28px) saturate(1.8)",
-            border: "1px solid rgba(255, 255, 255, 0.14)",
-            borderRadius: "14px",
-            boxShadow: "0 16px 40px rgba(0, 0, 0, 0.8), 0 0 25px rgba(168, 85, 247, 0.15)",
+            padding: "12px",
+            color: "var(--text-primary)",
             zIndex: 99999,
             height: "100%",
-            width: "100%",
             boxSizing: "border-box",
             cursor: "grab",
-            userSelect: "none",
-            overflow: "hidden"
+            userSelect: "none"
           }}
         >
-          {/* Main Controls Row */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px", width: "100%", minWidth: 0 }}>
-            {currentTrack ? (
-              <div style={{ display: "flex", gap: "8px", alignItems: "center", minWidth: 0, flex: 1 }}>
-                <img src={currentTrack.thumbnail} alt="" style={{ width: "38px", height: "38px", borderRadius: "8px", objectFit: "cover", flexShrink: 0, boxShadow: "0 4px 10px rgba(0,0,0,0.4)" }} />
-                <div style={{ minWidth: 0, flex: 1 }}>
-                  <div style={{ fontSize: "12px", fontWeight: "700", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "#ffffff" }}>{currentTrack.title}</div>
-                  <div style={{ fontSize: "10.5px", opacity: 0.65, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: "1px", color: "rgba(255,255,255,0.7)" }}>{currentTrack.artist}</div>
-                </div>
+          {/* Draggable header region */}
+          <div className="mini-player-header" style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            fontSize: "10.5px",
+            opacity: 0.6,
+            marginBottom: "6px",
+            userSelect: "none"
+          }}>
+            <span style={{ fontWeight: 700, letterSpacing: "0.5px" }}>TUCUS MINI</span>
+            <button className="icon-btn" onClick={exitMiniPlayer} title="Развернуть" style={{ padding: 2, background: "none", border: "none", color: "var(--text-primary)", cursor: "pointer" }}>
+              <Maximize2 size={13}/>
+            </button>
+          </div>
+          
+          {/* Current track information */}
+          {currentTrack ? (
+            <div style={{ display: "flex", gap: "10px", alignItems: "center", flex: 1, minWidth: 0 }}>
+              <img src={currentTrack.thumbnail} alt="" style={{ width: "42px", height: "42px", borderRadius: "8px", objectFit: "cover", boxShadow: "0 4px 10px rgba(0,0,0,0.3)", flexShrink: 0 }} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: "12px", fontWeight: "700", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{currentTrack.title}</div>
+                <div style={{ fontSize: "10.5px", opacity: 0.6, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: "1px" }}>{currentTrack.artist}</div>
               </div>
-            ) : (
-              <div style={{ flex: 1, fontSize: "11px", opacity: 0.5 }}>Нет трека</div>
-            )}
+            </div>
+          ) : (
+            <div style={{ display: "flex", flex: 1, alignItems: "center", justifyContent: "center", fontSize: "11px", opacity: 0.5 }}>
+              Нет воспроизведения
+            </div>
+          )}
 
-            <div style={{ display: "flex", alignItems: "center", gap: "5px", flexShrink: 0 }}>
-              <button className="icon-btn" onClick={handlePrev} style={{ padding: 4, background: "none", border: "none", color: "#ffffff", cursor: "pointer" }}><SkipBack size={13} fill="currentColor"/></button>
+          {/* Progress bar and basic controls */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "4px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <span style={{ fontSize: "9px", opacity: 0.5, minWidth: "22px", textAlign: "right" }}>{fmt(currentTime)}</span>
+              <div className="cinema-progress" onClick={handleSeek} style={{ flex: 1, height: "3px", background: "rgba(255,255,255,0.12)", borderRadius: "2px", overflow: "hidden", position: "relative" }}>
+                <div className="cinema-progress-fill" style={{ width: `${pct}%`, height: "100%", background: "var(--accent)" }} />
+              </div>
+              <span style={{ fontSize: "9px", opacity: 0.5, minWidth: "22px" }}>{fmt(duration)}</span>
+            </div>
+            
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "16px" }}>
+              <button className="icon-btn" onClick={handlePrev} style={{ padding: 2, background: "none", border: "none", color: "var(--text-primary)", cursor: "pointer" }}><SkipBack size={13} fill="currentColor"/></button>
               <button className="icon-btn" onClick={togglePlay} style={{
-                background: "#ffffff",
-                color: "#000000",
+                background: "var(--text-primary)",
+                color: "var(--bg-primary)",
                 borderRadius: "50%",
                 padding: "5px",
                 display: "flex",
@@ -2698,30 +2698,15 @@ const openSoundCloudArtist = async (userId, artistName) => {
                 cursor: "pointer"
               }} disabled={!currentTrack || isTrackLoading}>
                 {isTrackLoading ? (
-                  <div className="btn-spinner" style={{ width: 11, height: 11, border: "2px solid rgba(0,0,0,0.2)", borderTopColor: "#000000" }} />
+                  <div className="btn-spinner" style={{ width: 12, height: 12, border: "2px solid rgba(0,0,0,0.15)", borderTopColor: "currentColor" }} />
                 ) : isPlaying ? (
                   <Pause size={12} fill="currentColor"/>
                 ) : (
                   <Play size={12} fill="currentColor"/>
                 )}
               </button>
-              <button className="icon-btn" onClick={handleNextClick} style={{ padding: 4, background: "none", border: "none", color: "#ffffff", cursor: "pointer" }}><SkipForward size={13} fill="currentColor"/></button>
-
-              <div style={{ width: 1, height: 16, background: "rgba(255,255,255,0.18)", margin: "0 3px" }} />
-
-              <button className="icon-btn" onClick={exitMiniPlayer} title="Развернуть" style={{ padding: 4, background: "none", border: "none", color: "#ffffff", cursor: "pointer" }}>
-                <Maximize2 size={13}/>
-              </button>
+              <button className="icon-btn" onClick={handleNextClick} style={{ padding: 2, background: "none", border: "none", color: "var(--text-primary)", cursor: "pointer" }}><SkipForward size={13} fill="currentColor"/></button>
             </div>
-          </div>
-
-          {/* Bottom Progress Bar */}
-          <div style={{ display: "flex", alignItems: "center", gap: "6px", width: "100%", marginTop: "4px" }}>
-            <span style={{ fontSize: "9px", opacity: 0.55, minWidth: "22px", textAlign: "right" }}>{fmt(currentTime)}</span>
-            <div className="cinema-progress" onClick={handleSeek} style={{ flex: 1, height: "3.5px", background: "rgba(255,255,255,0.14)", borderRadius: "2px", overflow: "hidden", position: "relative", cursor: "pointer" }}>
-              <div className="cinema-progress-fill" style={{ width: `${pct}%`, height: "100%", background: "var(--accent)" }} />
-            </div>
-            <span style={{ fontSize: "9px", opacity: 0.55, minWidth: "22px" }}>{fmt(duration)}</span>
           </div>
         </div>
       ) : (
@@ -4815,92 +4800,9 @@ const openSoundCloudArtist = async (userId, artistName) => {
             </div>
           </div>
           <div className="player-bar__right" onWheel={handleVolumeScroll}>
-            <div className="speed-selector">
-              <button className="speed-btn" onClick={() => setShowSpeedDropdown(p => !p)} title="Playback Speed">
-                {playbackSpeed}x
-              </button>
-              {showSpeedDropdown && (
-                <div className="speed-dropdown liquid-glass-effect" onMouseLeave={() => setShowSpeedDropdown(false)} style={{ padding: "12px", width: 160, display: "flex", flexDirection: "column", gap: 8, alignItems: "center" }}>
-                  <div style={{ fontSize: 11, color: "var(--text-secondary)", fontWeight: 600 }}>Скорость: {playbackSpeed}x</div>
-                  
-                  <div style={{ display: "flex", flexDirection: "column", gap: 4, width: "100%" }}>
-                    <button
-                      type="button"
-                      onClick={() => applySpeedPreset(0.85, true)}
-                      style={{
-                        fontSize: 10.5,
-                        fontWeight: 700,
-                        padding: "6px 8px",
-                        borderRadius: "6px",
-                        border: "1px solid rgba(168, 85, 247, 0.4)",
-                        background: playbackSpeed === 0.85 ? "rgba(168, 85, 247, 0.3)" : "rgba(255,255,255,0.05)",
-                        color: playbackSpeed === 0.85 ? "rgb(216, 180, 254)" : "#fff",
-                        cursor: "pointer",
-                        textAlign: "center",
-                        transition: "all 0.2s"
-                      }}
-                    >
-                      🌙 Slowed & Reverb (0.85x)
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => applySpeedPreset(1.0, false)}
-                      style={{
-                        fontSize: 10.5,
-                        fontWeight: 600,
-                        padding: "5px 8px",
-                        borderRadius: "6px",
-                        border: "1px solid rgba(255,255,255,0.12)",
-                        background: playbackSpeed === 1.0 ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.05)",
-                        color: "#fff",
-                        cursor: "pointer",
-                        textAlign: "center",
-                        transition: "all 0.2s"
-                      }}
-                    >
-                      Обычная (1.0x)
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => applySpeedPreset(1.3, false)}
-                      style={{
-                        fontSize: 10.5,
-                        fontWeight: 700,
-                        padding: "6px 8px",
-                        borderRadius: "6px",
-                        border: "1px solid rgba(236, 72, 153, 0.4)",
-                        background: playbackSpeed === 1.3 ? "rgba(236, 72, 153, 0.3)" : "rgba(255,255,255,0.05)",
-                        color: playbackSpeed === 1.3 ? "rgb(244, 114, 182)" : "#fff",
-                        cursor: "pointer",
-                        textAlign: "center",
-                        transition: "all 0.2s"
-                      }}
-                    >
-                      ⚡ Speed Up (1.3x)
-                    </button>
-                  </div>
-
-                  <input 
-                    type="range" 
-                    min="0.5" 
-                    max="2.0" 
-                    step="0.05" 
-                    value={playbackSpeed} 
-                    onChange={e => {
-                      const val = parseFloat(e.target.value);
-                      applySpeedPreset(val, false);
-                    }}
-                    style={{ width: "100%", accentColor: "var(--accent)", height: 4, borderRadius: 2, background: "rgba(255,255,255,0.1)", outline: "none", cursor: "pointer", marginTop: 2 }}
-                  />
-                </div>
-              )}
-            </div>
             {currentTrack&&<button className="ctrl-btn ctrl-btn--sm" onClick={()=>setShowNowPlaying(true)} title="Now Playing"><Maximize2 size={15}/></button>}
             <button className="ctrl-btn ctrl-btn--sm" onClick={enterMiniPlayer} title="Мини-плеер"><Minimize2 size={15}/></button>
             {currentTrack&&lyrics&&lyrics.length>0&&<button className={`ctrl-btn ctrl-btn--sm ${npTab==="lyrics"&&showNowPlaying?"ctrl-btn--active":""}`} onClick={()=>{setNpTab("lyrics");setShowNowPlaying(true);}} title="Текст песни"><Mic2 size={15}/></button>}
-            <button className={`ctrl-btn ctrl-btn--sm ${showEqModal?"ctrl-btn--active":""}`} onClick={()=>setShowEqModal(p=>!p)} title="Equalizer"><Sliders size={15}/></button>
             <button className={`ctrl-btn ctrl-btn--sm ${showQueue?"ctrl-btn--active":""}`} onClick={()=>setShowQueue(p=>!p)}><List size={15}/></button>
             <button className="ctrl-btn ctrl-btn--sm" onClick={()=>setIsMuted(p=>!p)}>{isMuted?<VolumeX size={15}/>:<Volume2 size={15}/>}</button>
             <input className="volume-slider" type="range" min="0" max="1" step="0.02" value={isMuted?0:volume}
@@ -4909,70 +4811,6 @@ const openSoundCloudArtist = async (userId, artistName) => {
         </footer>
       )}
         </>
-      )}
-      {showEqModal && (
-        <div className="eq-modal" onClick={() => setShowEqModal(false)} style={{ zIndex: 9999 }}>
-          <div className="eq-modal__content liquid-glass-effect" onClick={e => e.stopPropagation()} style={{ maxWidth: 440, padding: "20px 24px" }}>
-            <div className="eq-modal__header" style={{ display: "flex", alignItems: "center", marginBottom: 16 }}>
-              <Sliders size={18} style={{ marginRight: 8, color: "var(--accent)" }}/>
-              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Эквалайзер</h3>
-              <button className="icon-btn" style={{ marginLeft: "auto", cursor: "pointer" }} onClick={() => setShowEqModal(false)}><X size={16}/></button>
-            </div>
-
-            {/* Presets List */}
-            <div style={{ marginBottom: 18 }}>
-              <div style={{ fontSize: 11, fontWeight: 600, opacity: 0.5, marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.5px" }}>Пресеты</div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                {Object.keys(EQ_PRESETS).map(name => (
-                  <button
-                    key={name}
-                    type="button"
-                    onClick={() => applyEqPreset(name, EQ_PRESETS[name])}
-                    style={{
-                      padding: "6px 12px",
-                      borderRadius: 8,
-                      fontSize: 11.5,
-                      fontWeight: eqPreset === name ? "700" : "500",
-                      background: eqPreset === name ? "var(--accent)" : "rgba(255,255,255,0.06)",
-                      color: eqPreset === name ? "#fff" : "rgba(255,255,255,0.8)",
-                      border: "1px solid rgba(255,255,255,0.1)",
-                      cursor: "pointer",
-                      transition: "all 0.2s"
-                    }}
-                  >
-                    {name}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* 5 Vertical Band Sliders */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", height: 160, padding: "12px 16px", background: "rgba(0,0,0,0.25)", borderRadius: 12, border: "1px solid rgba(255,255,255,0.05)" }}>
-              {["60Hz", "230Hz", "910Hz", "4kHz", "14kHz"].map((label, idx) => (
-                <div key={label} style={{ display: "flex", flexDirection: "column", alignItems: "center", height: "100%", justifyContent: "space-between", width: 52 }}>
-                  <span style={{ fontSize: 10, fontWeight: 600, opacity: 0.7 }}>{eqGains[idx] > 0 ? `+${eqGains[idx]}` : eqGains[idx]}dB</span>
-                  <input
-                    type="range"
-                    min="-12"
-                    max="12"
-                    step="0.5"
-                    value={eqGains[idx] || 0}
-                    onChange={e => updateEqGain(idx, parseFloat(e.target.value))}
-                    style={{
-                      writingMode: "bt-lr",
-                      WebkitAppearance: "slider-vertical",
-                      width: 8,
-                      height: 100,
-                      accentColor: "var(--accent)",
-                      cursor: "pointer"
-                    }}
-                  />
-                  <span style={{ fontSize: "10.5px", fontWeight: 600, color: "var(--text-secondary)" }}>{label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
       )}
       {artistSelectTrack && (
         <div className="eq-modal" onClick={() => setArtistSelectTrack(null)}>

@@ -3406,7 +3406,7 @@ fn drag_mini_player(window: tauri::Window) -> Result<(), String> {
 fn set_mini_player_mode(window: tauri::Window, enable: bool) -> Result<(), String> {
     if enable {
         let _ = window.set_decorations(false);
-        let _ = window.set_size(tauri::Size::Logical(tauri::LogicalSize { width: 350.0, height: 110.0 }));
+        let _ = window.set_size(tauri::Size::Logical(tauri::LogicalSize { width: 320.0, height: 135.0 }));
         let _ = window.set_always_on_top(true);
     } else {
         let _ = window.set_decorations(true);
