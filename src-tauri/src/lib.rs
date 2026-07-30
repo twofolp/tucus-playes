@@ -3401,7 +3401,7 @@ fn set_proxy_url(proxy: String, state: tauri::State<'_, AppState>) {
 fn set_mini_player_mode(window: tauri::Window, enable: bool) -> Result<(), String> {
     if enable {
         let _ = window.set_decorations(false);
-        let _ = window.set_size(tauri::Size::Logical(tauri::LogicalSize { width: 310.0, height: 130.0 }));
+        let _ = window.set_size(tauri::Size::Logical(tauri::LogicalSize { width: 300.0, height: 96.0 }));
         let _ = window.set_always_on_top(true);
     } else {
         let _ = window.set_decorations(true);
