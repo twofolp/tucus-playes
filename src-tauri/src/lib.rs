@@ -3403,14 +3403,50 @@ fn drag_mini_player(window: tauri::Window) -> Result<(), String> {
 }
 
 #[tauri::command]
-fn set_mini_player_mode(window: tauri::Window, enable: bool) -> Result<(), String> {
+async fn set_mini_player_mode(window: tauri::Window, enable: bool) -> Result<(), String> {
+    let steps = 24;
+    let delay = std::time::Duration::from_millis(16); // ~16ms frame step
+
     if enable {
         let _ = window.set_decorations(false);
-        let _ = window.set_size(tauri::Size::Logical(tauri::LogicalSize { width: 320.0, height: 135.0 }));
         let _ = window.set_always_on_top(true);
+
+        let start_size = window.inner_size().unwrap_or(tauri::PhysicalSize { width: 1024, height: 720 });
+        let start_w = start_size.width as f64;
+        let start_h = start_size.height as f64;
+        let target_w = 340.0;
+        let target_h = 140.0;
+
+        for i in 1..=steps {
+            let t = i as f64 / steps as f64;
+            let ease = 1.0 - (1.0 - t).powi(3);
+
+            let current_w = start_w + (target_w - start_w) * ease;
+            let current_h = start_h + (target_h - start_h) * ease;
+
+            let _ = window.set_size(tauri::Size::Logical(tauri::LogicalSize { width: current_w, height: current_h }));
+            tokio::time::sleep(delay).await;
+        }
+        let _ = window.set_size(tauri::Size::Logical(tauri::LogicalSize { width: target_w, height: target_h }));
     } else {
+        let start_size = window.inner_size().unwrap_or(tauri::PhysicalSize { width: 340, height: 140 });
+        let start_w = start_size.width as f64;
+        let start_h = start_size.height as f64;
+        let target_w = 1024.0;
+        let target_h = 720.0;
+
+        for i in 1..=steps {
+            let t = i as f64 / steps as f64;
+            let ease = 1.0 - (1.0 - t).powi(3);
+
+            let current_w = start_w + (target_w - start_w) * ease;
+            let current_h = start_h + (target_h - start_h) * ease;
+
+            let _ = window.set_size(tauri::Size::Logical(tauri::LogicalSize { width: current_w, height: current_h }));
+            tokio::time::sleep(delay).await;
+        }
+        let _ = window.set_size(tauri::Size::Logical(tauri::LogicalSize { width: target_w, height: target_h }));
         let _ = window.set_decorations(true);
-        let _ = window.set_size(tauri::Size::Logical(tauri::LogicalSize { width: 1024.0, height: 720.0 }));
         let _ = window.set_always_on_top(false);
     }
     Ok(())

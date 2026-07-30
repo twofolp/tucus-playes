@@ -2634,79 +2634,107 @@ const openSoundCloudArtist = async (userId, artistName) => {
             display: "flex",
             flexDirection: "column",
             justifyContent: "space-between",
-            padding: "12px",
-            color: "var(--text-primary)",
+            padding: "10px 14px",
+            color: "#ffffff",
+            background: "rgba(12, 12, 18, 0.92)",
+            backdropFilter: "blur(40px) saturate(2)",
+            WebkitBackdropFilter: "blur(40px) saturate(2)",
+            border: "1px solid rgba(255, 255, 255, 0.14)",
+            borderRadius: "18px",
+            boxShadow: "0 20px 50px rgba(0, 0, 0, 0.85), 0 0 30px rgba(168, 85, 247, 0.2)",
             zIndex: 99999,
             height: "100%",
+            width: "100%",
             boxSizing: "border-box",
             cursor: "grab",
-            userSelect: "none"
+            userSelect: "none",
+            overflow: "hidden"
           }}
         >
-          {/* Draggable header region */}
-          <div className="mini-player-header" style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            fontSize: "10.5px",
-            opacity: 0.6,
-            marginBottom: "6px",
-            userSelect: "none"
-          }}>
-            <span style={{ fontWeight: 700, letterSpacing: "0.5px" }}>TUCUS MINI</span>
-            <button className="icon-btn" onClick={exitMiniPlayer} title="Развернуть" style={{ padding: 2, background: "none", border: "none", color: "var(--text-primary)", cursor: "pointer" }}>
-              <Maximize2 size={13}/>
+          {/* Header Row: Live Badge & Expand Button */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "10px", fontWeight: 700, letterSpacing: "0.8px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "rgba(255,255,255,0.75)" }}>
+              <span style={{
+                width: 6,
+                height: 6,
+                borderRadius: "50%",
+                background: isPlaying ? "#a855f7" : "rgba(255,255,255,0.3)",
+                boxShadow: isPlaying ? "0 0 8px #a855f7" : "none",
+                display: "inline-block"
+              }} />
+              <span>TUCUS MINI</span>
+            </div>
+            <button
+              className="icon-btn"
+              onClick={exitMiniPlayer}
+              title="Развернуть"
+              style={{
+                width: 22,
+                height: 22,
+                borderRadius: 6,
+                background: "rgba(255,255,255,0.08)",
+                border: "1px solid rgba(255,255,255,0.12)",
+                color: "#ffffff",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                transition: "all 0.2s"
+              }}
+            >
+              <Maximize2 size={12}/>
             </button>
           </div>
-          
-          {/* Current track information */}
+
+          {/* Center Body: Thumbnail, Title/Artist & Playback Controls */}
           {currentTrack ? (
-            <div style={{ display: "flex", gap: "10px", alignItems: "center", flex: 1, minWidth: 0 }}>
-              <img src={currentTrack.thumbnail} alt="" style={{ width: "42px", height: "42px", borderRadius: "8px", objectFit: "cover", boxShadow: "0 4px 10px rgba(0,0,0,0.3)", flexShrink: 0 }} />
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", flex: 1, minWidth: 0, margin: "2px 0" }}>
+              <img src={currentTrack.thumbnail} alt="" style={{ width: "42px", height: "42px", borderRadius: "10px", objectFit: "cover", flexShrink: 0, boxShadow: "0 6px 14px rgba(0,0,0,0.5)" }} />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: "12px", fontWeight: "700", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{currentTrack.title}</div>
-                <div style={{ fontSize: "10.5px", opacity: 0.6, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: "1px" }}>{currentTrack.artist}</div>
+                <div style={{ fontSize: "12px", fontWeight: "700", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "#ffffff" }}>{currentTrack.title}</div>
+                <div style={{ fontSize: "10.5px", fontWeight: 500, color: "rgba(255,255,255,0.6)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: "1px" }}>{currentTrack.artist}</div>
+              </div>
+
+              {/* Controls */}
+              <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
+                <button className="icon-btn" onClick={handlePrev} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.85)", cursor: "pointer", padding: 2 }}><SkipBack size={14} fill="currentColor"/></button>
+                <button className="icon-btn" onClick={togglePlay} style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: "50%",
+                  background: "linear-gradient(135deg, #ffffff 0%, #f3e8ff 100%)",
+                  color: "#000000",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  border: "none",
+                  boxShadow: "0 0 15px rgba(255,255,255,0.4)",
+                  cursor: "pointer"
+                }} disabled={!currentTrack || isTrackLoading}>
+                  {isTrackLoading ? (
+                    <div className="btn-spinner" style={{ width: 12, height: 12, border: "2px solid rgba(0,0,0,0.2)", borderTopColor: "#000000" }} />
+                  ) : isPlaying ? (
+                    <Pause size={13} fill="currentColor"/>
+                  ) : (
+                    <Play size={13} fill="currentColor"/>
+                  )}
+                </button>
+                <button className="icon-btn" onClick={handleNextClick} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.85)", cursor: "pointer", padding: 2 }}><SkipForward size={14} fill="currentColor"/></button>
               </div>
             </div>
           ) : (
-            <div style={{ display: "flex", flex: 1, alignItems: "center", justifyContent: "center", fontSize: "11px", opacity: 0.5 }}>
+            <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "11px", color: "rgba(255,255,255,0.4)" }}>
               Нет воспроизведения
             </div>
           )}
 
-          {/* Progress bar and basic controls */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "4px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <span style={{ fontSize: "9px", opacity: 0.5, minWidth: "22px", textAlign: "right" }}>{fmt(currentTime)}</span>
-              <div className="cinema-progress" onClick={handleSeek} style={{ flex: 1, height: "3px", background: "rgba(255,255,255,0.12)", borderRadius: "2px", overflow: "hidden", position: "relative" }}>
-                <div className="cinema-progress-fill" style={{ width: `${pct}%`, height: "100%", background: "var(--accent)" }} />
-              </div>
-              <span style={{ fontSize: "9px", opacity: 0.5, minWidth: "22px" }}>{fmt(duration)}</span>
+          {/* Bottom Progress Row */}
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", width: "100%" }}>
+            <span style={{ fontSize: "9px", fontWeight: 600, color: "rgba(255,255,255,0.5)", minWidth: "22px", textAlign: "right" }}>{fmt(currentTime)}</span>
+            <div className="cinema-progress" onClick={handleSeek} style={{ flex: 1, height: "3.5px", background: "rgba(255,255,255,0.12)", borderRadius: "2px", overflow: "hidden", position: "relative", cursor: "pointer" }}>
+              <div className="cinema-progress-fill" style={{ width: `${pct}%`, height: "100%", background: "linear-gradient(90deg, #a855f7 0%, #c084fc 100%)" }} />
             </div>
-            
-            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "16px" }}>
-              <button className="icon-btn" onClick={handlePrev} style={{ padding: 2, background: "none", border: "none", color: "var(--text-primary)", cursor: "pointer" }}><SkipBack size={13} fill="currentColor"/></button>
-              <button className="icon-btn" onClick={togglePlay} style={{
-                background: "var(--text-primary)",
-                color: "var(--bg-primary)",
-                borderRadius: "50%",
-                padding: "5px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                border: "none",
-                cursor: "pointer"
-              }} disabled={!currentTrack || isTrackLoading}>
-                {isTrackLoading ? (
-                  <div className="btn-spinner" style={{ width: 12, height: 12, border: "2px solid rgba(0,0,0,0.15)", borderTopColor: "currentColor" }} />
-                ) : isPlaying ? (
-                  <Pause size={12} fill="currentColor"/>
-                ) : (
-                  <Play size={12} fill="currentColor"/>
-                )}
-              </button>
-              <button className="icon-btn" onClick={handleNextClick} style={{ padding: 2, background: "none", border: "none", color: "var(--text-primary)", cursor: "pointer" }}><SkipForward size={13} fill="currentColor"/></button>
-            </div>
+            <span style={{ fontSize: "9px", fontWeight: 600, color: "rgba(255,255,255,0.5)", minWidth: "22px" }}>{fmt(duration)}</span>
           </div>
         </div>
       ) : (
