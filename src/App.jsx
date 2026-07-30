@@ -407,32 +407,13 @@ function App() {
   const prevSizeRef = useRef(null);
 
   const enterMiniPlayer = async () => {
-    try {
-      const win = getCurrentWindow();
-      if (win.innerSize) {
-        const size = await win.innerSize().catch(() => null);
-        if (size) prevSizeRef.current = size;
-      }
-      if (win.setDecorations) await win.setDecorations(false).catch(() => {});
-      if (win.setSize) await win.setSize(new LogicalSize(320, 135)).catch(() => {});
-      if (win.setAlwaysOnTop) await win.setAlwaysOnTop(true).catch(() => {});
-    } catch (e) {
-      console.error("Window API call note:", e);
-    } finally {
-      setIsMiniPlayer(true);
-    }
+    setIsMiniPlayer(true);
+    invoke("set_mini_player_mode", { enable: true }).catch(e => console.error("Mini player Rust command error:", e));
   };
 
   const exitMiniPlayer = async () => {
-    try {
-      const win = getCurrentWindow();
-      await win.setDecorations(true);
-      await win.setSize(new LogicalSize(1024, 720));
-      await win.setAlwaysOnTop(false);
-      setIsMiniPlayer(false);
-    } catch (e) {
-      console.error("Failed to exit mini player:", e);
-    }
+    setIsMiniPlayer(false);
+    invoke("set_mini_player_mode", { enable: false }).catch(e => console.error("Mini player restore Rust command error:", e));
   };
   const [showSpeedDropdown, setShowSpeedDropdown] = useState(false);
   const [yandexToken, setYandexToken] = useState(localStorage.getItem("yandex_token") || "");

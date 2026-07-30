@@ -3397,6 +3397,20 @@ fn set_proxy_url(proxy: String, state: tauri::State<'_, AppState>) {
     }
 }
 
+#[tauri::command]
+fn set_mini_player_mode(window: tauri::Window, enable: bool) -> Result<(), String> {
+    if enable {
+        let _ = window.set_decorations(false);
+        let _ = window.set_size(tauri::Size::Logical(tauri::LogicalSize { width: 310.0, height: 130.0 }));
+        let _ = window.set_always_on_top(true);
+    } else {
+        let _ = window.set_decorations(true);
+        let _ = window.set_size(tauri::Size::Logical(tauri::LogicalSize { width: 1024.0, height: 720.0 }));
+        let _ = window.set_always_on_top(false);
+    }
+    Ok(())
+}
+
 pub fn run() {
     let http_client = reqwest::Client::builder()
         .pool_max_idle_per_host(25)
@@ -3418,6 +3432,7 @@ pub fn run() {
         })
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
+            set_mini_player_mode,
             greet,
             search_yandex,
             get_yandex_stream,
