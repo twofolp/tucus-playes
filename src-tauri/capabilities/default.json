@@ -6,6 +6,7 @@
   "permissions": [
     "core:default",
     "opener:default",
-    "core:path:default"
+    "core:path:default",
+    "core:window:default"
   ]
 }

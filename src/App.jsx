@@ -409,15 +409,17 @@ function App() {
   const enterMiniPlayer = async () => {
     try {
       const win = getCurrentWindow();
-      const size = await win.innerSize();
-      prevSizeRef.current = size;
-      
-      await win.setDecorations(false);
-      await win.setSize(new LogicalSize(320, 135));
-      await win.setAlwaysOnTop(true);
-      setIsMiniPlayer(true);
+      if (win.innerSize) {
+        const size = await win.innerSize().catch(() => null);
+        if (size) prevSizeRef.current = size;
+      }
+      if (win.setDecorations) await win.setDecorations(false).catch(() => {});
+      if (win.setSize) await win.setSize(new LogicalSize(320, 135)).catch(() => {});
+      if (win.setAlwaysOnTop) await win.setAlwaysOnTop(true).catch(() => {});
     } catch (e) {
-      console.error("Failed to enter mini player:", e);
+      console.error("Window API call note:", e);
+    } finally {
+      setIsMiniPlayer(true);
     }
   };
 
@@ -4915,6 +4917,70 @@ const openSoundCloudArtist = async (userId, artistName) => {
         </footer>
       )}
         </>
+      )}
+      {showEqModal && (
+        <div className="eq-modal" onClick={() => setShowEqModal(false)} style={{ zIndex: 9999 }}>
+          <div className="eq-modal__content liquid-glass-effect" onClick={e => e.stopPropagation()} style={{ maxWidth: 440, padding: "20px 24px" }}>
+            <div className="eq-modal__header" style={{ display: "flex", alignItems: "center", marginBottom: 16 }}>
+              <Sliders size={18} style={{ marginRight: 8, color: "var(--accent)" }}/>
+              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Эквалайзер</h3>
+              <button className="icon-btn" style={{ marginLeft: "auto", cursor: "pointer" }} onClick={() => setShowEqModal(false)}><X size={16}/></button>
+            </div>
+
+            {/* Presets List */}
+            <div style={{ marginBottom: 18 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, opacity: 0.5, marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.5px" }}>Пресеты</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {Object.keys(EQ_PRESETS).map(name => (
+                  <button
+                    key={name}
+                    type="button"
+                    onClick={() => applyEqPreset(name, EQ_PRESETS[name])}
+                    style={{
+                      padding: "6px 12px",
+                      borderRadius: 8,
+                      fontSize: 11.5,
+                      fontWeight: eqPreset === name ? "700" : "500",
+                      background: eqPreset === name ? "var(--accent)" : "rgba(255,255,255,0.06)",
+                      color: eqPreset === name ? "#fff" : "rgba(255,255,255,0.8)",
+                      border: "1px solid rgba(255,255,255,0.1)",
+                      cursor: "pointer",
+                      transition: "all 0.2s"
+                    }}
+                  >
+                    {name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 5 Vertical Band Sliders */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", height: 160, padding: "12px 16px", background: "rgba(0,0,0,0.25)", borderRadius: 12, border: "1px solid rgba(255,255,255,0.05)" }}>
+              {["60Hz", "230Hz", "910Hz", "4kHz", "14kHz"].map((label, idx) => (
+                <div key={label} style={{ display: "flex", flexDirection: "column", alignItems: "center", height: "100%", justifyContent: "space-between", width: 52 }}>
+                  <span style={{ fontSize: 10, fontWeight: 600, opacity: 0.7 }}>{eqGains[idx] > 0 ? `+${eqGains[idx]}` : eqGains[idx]}dB</span>
+                  <input
+                    type="range"
+                    min="-12"
+                    max="12"
+                    step="0.5"
+                    value={eqGains[idx] || 0}
+                    onChange={e => updateEqGain(idx, parseFloat(e.target.value))}
+                    style={{
+                      writingMode: "bt-lr",
+                      WebkitAppearance: "slider-vertical",
+                      width: 8,
+                      height: 100,
+                      accentColor: "var(--accent)",
+                      cursor: "pointer"
+                    }}
+                  />
+                  <span style={{ fontSize: "10.5px", fontWeight: 600, color: "var(--text-secondary)" }}>{label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       )}
       {artistSelectTrack && (
         <div className="eq-modal" onClick={() => setArtistSelectTrack(null)}>
