@@ -13,6 +13,26 @@ pub struct AppState {
     pub http_client: reqwest::Client,
     pub soundcloud_client_id: Mutex<Option<(String, Instant)>>,
     pub stream_cache: Mutex<std::collections::HashMap<String, (String, Instant)>>,
+    pub proxy_url: Mutex<Option<String>>,
+}
+
+fn get_client_with_proxy(default_client: &reqwest::Client, proxy_str: Option<&str>) -> reqwest::Client {
+    if let Some(p) = proxy_str {
+        let p_trimmed = p.trim();
+        if !p_trimmed.is_empty() {
+            if let Ok(proxy) = reqwest::Proxy::all(p_trimmed) {
+                if let Ok(client) = reqwest::Client::builder()
+                    .proxy(proxy)
+                    .pool_max_idle_per_host(25)
+                    .pool_idle_timeout(std::time::Duration::from_secs(90))
+                    .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/122.0.0.0 Safari/537.36")
+                    .build() {
+                    return client;
+                }
+            }
+        }
+    }
+    default_client.clone()
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -402,7 +422,7 @@ async fn is_client_id_valid(client: &reqwest::Client, client_id: &str) -> bool {
         }
 }
 
-async fn fetch_soundcloud_client_id_cached(state: &tauri::State<'_, AppState>) -> Result<String, String> {
+async fn fetch_soundcloud_client_id_cached(client: &reqwest::Client, state: &AppState) -> Result<String, String> {
     // Check cache first (valid for 1 hour)
     {
         let cache = state.soundcloud_client_id.lock().map_err(|e| e.to_string())?;
@@ -413,7 +433,7 @@ async fn fetch_soundcloud_client_id_cached(state: &tauri::State<'_, AppState>) -
         }
     }
 
-    let client_id = fetch_soundcloud_client_id_inner(&state.http_client).await?;
+    let client_id = fetch_soundcloud_client_id_inner(client).await?;
 
     // Store in cache
     let mut cache = state.soundcloud_client_id.lock().map_err(|e| e.to_string())?;
@@ -470,14 +490,20 @@ async fn fetch_soundcloud_client_id_inner(client: &reqwest::Client) -> Result<St
 
 #[tauri::command]
 async fn search_soundcloud(query: String, state: tauri::State<'_, AppState>) -> Result<Vec<Track>, String> {
-    let client_id = fetch_soundcloud_client_id_cached(&state).await?;
+    let proxy_str = if let Ok(guard) = state.proxy_url.lock() {
+        guard.clone()
+    } else {
+        None
+    };
+    let client = get_client_with_proxy(&state.http_client, proxy_str.as_deref());
+    let client_id = fetch_soundcloud_client_id_cached(&client, &state).await?;
     let url = format!(
         "https://api-v2.soundcloud.com/search/tracks?q={}&client_id={}&limit=20",
         urlencoding::encode(&query),
         client_id
     );
     
-    let response = state.http_client.get(&url)
+    let response = client.get(&url)
         .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0 Safari/537.36")
         .send()
         .await
@@ -529,7 +555,13 @@ async fn search_soundcloud(query: String, state: tauri::State<'_, AppState>) -> 
 
 #[tauri::command]
 async fn search_soundcloud_charts(genre: String, state: tauri::State<'_, AppState>) -> Result<Vec<Track>, String> {
-    let client_id = fetch_soundcloud_client_id_cached(&state).await?;
+    let proxy_str = if let Ok(guard) = state.proxy_url.lock() {
+        guard.clone()
+    } else {
+        None
+    };
+    let client = get_client_with_proxy(&state.http_client, proxy_str.as_deref());
+    let client_id = fetch_soundcloud_client_id_cached(&client, &state).await?;
     // SoundCloud charts API: top tracks by genre
     let url = format!(
         "https://api-v2.soundcloud.com/charts?kind=top&genre=soundcloud:genres:{}&client_id={}&limit=10",
@@ -537,7 +569,7 @@ async fn search_soundcloud_charts(genre: String, state: tauri::State<'_, AppStat
         client_id
     );
     
-    let response = state.http_client.get(&url)
+    let response = client.get(&url)
         .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0 Safari/537.36")
         .send()
         .await
@@ -608,14 +640,20 @@ async fn search_soundcloud_charts(genre: String, state: tauri::State<'_, AppStat
 
 #[tauri::command]
 async fn get_soundcloud_user_tracks(user_id: String, state: tauri::State<'_, AppState>) -> Result<Vec<Track>, String> {
-    let client_id = fetch_soundcloud_client_id_cached(&state).await?;
+    let proxy_str = if let Ok(guard) = state.proxy_url.lock() {
+        guard.clone()
+    } else {
+        None
+    };
+    let client = get_client_with_proxy(&state.http_client, proxy_str.as_deref());
+    let client_id = fetch_soundcloud_client_id_cached(&client, &state).await?;
     
     // Get user info
     let user_url = format!(
         "https://api-v2.soundcloud.com/users/{}?client_id={}",
         user_id, client_id
     );
-    let user_resp = state.http_client.get(&user_url)
+    let user_resp = client.get(&user_url)
         .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0 Safari/537.36")
         .send().await.map_err(|e| e.to_string())?;
     let user_json: serde_json::Value = user_resp.json().await.map_err(|e| e.to_string())?;
@@ -626,7 +664,7 @@ async fn get_soundcloud_user_tracks(user_id: String, state: tauri::State<'_, App
         "https://api-v2.soundcloud.com/users/{}/tracks?client_id={}&limit=20&representation=full",
         user_id, client_id
     );
-    let resp = state.http_client.get(&tracks_url)
+    let resp = client.get(&tracks_url)
         .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0 Safari/537.36")
         .send().await.map_err(|e| e.to_string())?;
 
@@ -672,7 +710,13 @@ async fn get_soundcloud_stream(track_id: String, state: tauri::State<'_, AppStat
         }
     }
 
-    let client_id = fetch_soundcloud_client_id_cached(&state).await?;
+    let proxy_str = if let Ok(guard) = state.proxy_url.lock() {
+        guard.clone()
+    } else {
+        None
+    };
+    let client = get_client_with_proxy(&state.http_client, proxy_str.as_deref());
+    let client_id = fetch_soundcloud_client_id_cached(&client, &state).await?;
     
     // 1. Get track details to find media stream auth URLs
     let url = format!(
@@ -681,7 +725,7 @@ async fn get_soundcloud_stream(track_id: String, state: tauri::State<'_, AppStat
         client_id
     );
     
-    let response = state.http_client.get(&url)
+    let response = client.get(&url)
         .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0 Safari/537.36")
         .send()
         .await
@@ -705,7 +749,7 @@ async fn get_soundcloud_stream(track_id: String, state: tauri::State<'_, AppStat
         
     // 2. Fetch direct streaming URL
     let stream_url_req = format!("{}?client_id={}", stream_auth_url, client_id);
-    let stream_res = state.http_client.get(&stream_url_req)
+    let stream_res = client.get(&stream_url_req)
         .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0 Safari/537.36")
         .send()
         .await
@@ -725,7 +769,7 @@ async fn get_soundcloud_stream(track_id: String, state: tauri::State<'_, AppStat
 
     // If the stream URL is an HLS m3u8 playlist, parse the first playable audio segment URL
     if direct_url.contains(".m3u8") || direct_url.contains("/hls") {
-        if let Ok(m3u8_res) = state.http_client.get(&direct_url)
+        if let Ok(m3u8_res) = client.get(&direct_url)
             .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0 Safari/537.36")
             .send().await {
                 if let Ok(text) = m3u8_res.text().await {
@@ -1478,14 +1522,20 @@ fn delete_cached_track(app_handle: tauri::AppHandle, track_id: String, source: S
 
 #[tauri::command]
 async fn get_soundcloud_similar(track_id: String, state: tauri::State<'_, AppState>) -> Result<Vec<Track>, String> {
-    let client_id = fetch_soundcloud_client_id_cached(&state).await?;
+    let proxy_str = if let Ok(guard) = state.proxy_url.lock() {
+        guard.clone()
+    } else {
+        None
+    };
+    let client = get_client_with_proxy(&state.http_client, proxy_str.as_deref());
+    let client_id = fetch_soundcloud_client_id_cached(&client, &state).await?;
     let url = format!(
         "https://api-v2.soundcloud.com/tracks/{}/related?client_id={}&limit=20",
         track_id,
         client_id
     );
 
-    let response = state.http_client.get(&url)
+    let response = client.get(&url)
         .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0 Safari/537.36")
         .send()
         .await
@@ -1810,7 +1860,12 @@ async fn yandex_like_track(track_id: String, token: String, remove: bool, state:
 
 #[tauri::command]
 async fn search_youtube(query: String, state: tauri::State<'_, AppState>) -> Result<Vec<Track>, String> {
-    search_youtube_raw(&query, &state.http_client).await
+    let proxy = if let Ok(guard) = state.proxy_url.lock() {
+        guard.clone()
+    } else {
+        None
+    };
+    search_youtube_raw(&query, &state.http_client, proxy.as_deref()).await
 }
 
 #[tauri::command]
@@ -1823,6 +1878,13 @@ async fn get_youtube_stream(video_id: String, state: tauri::State<'_, AppState>)
             }
         }
     }
+
+    let proxy_str = if let Ok(guard) = state.proxy_url.lock() {
+        guard.clone()
+    } else {
+        None
+    };
+    let client = get_client_with_proxy(&state.http_client, proxy_str.as_deref());
 
     // 1. Try YouTube InnerTube API (No yt-dlp required!)
     let url = "https://www.youtube.com/youtubei/v1/player";
@@ -1839,7 +1901,7 @@ async fn get_youtube_stream(video_id: String, state: tauri::State<'_, AppState>)
         }
     });
 
-    if let Ok(res) = state.http_client.post(url)
+    if let Ok(res) = client.post(url)
         .header("User-Agent", "com.google.android.youtube/19.05.36 (Linux; U; Android 11; en_US)")
         .header("Content-Type", "application/json")
         .json(&body)
@@ -1882,7 +1944,7 @@ async fn get_youtube_stream(video_id: String, state: tauri::State<'_, AppState>)
 
     for inst in piped_instances {
         let piped_url = format!("{}/streams/{}", inst, video_id);
-        if let Ok(res) = state.http_client.get(&piped_url).timeout(std::time::Duration::from_secs(4)).send().await {
+        if let Ok(res) = client.get(&piped_url).timeout(std::time::Duration::from_secs(4)).send().await {
             if let Ok(json) = res.json::<serde_json::Value>().await {
                 if let Some(audio_streams) = json["audioStreams"].as_array() {
                     if let Some(best) = audio_streams.first() {
@@ -1909,6 +1971,11 @@ async fn get_youtube_stream(video_id: String, state: tauri::State<'_, AppState>)
         const CREATE_NO_WINDOW: u32 = 0x08000000;
         cmd.creation_flags(CREATE_NO_WINDOW);
     }
+    if let Some(ref p) = proxy_str {
+        if !p.trim().is_empty() {
+            cmd.arg("--proxy").arg(p.trim());
+        }
+    }
     if let Ok(out) = cmd.arg("-g").arg("-f").arg("ba/bestaudio").arg("--no-playlist").arg("--no-warnings").arg(&video_url).output() {
         if out.status.success() {
             let stdout = String::from_utf8_lossy(&out.stdout);
@@ -1927,7 +1994,7 @@ async fn get_youtube_stream(video_id: String, state: tauri::State<'_, AppState>)
 
 
 
-async fn search_youtube_raw(query: &str, _client: &reqwest::Client) -> Result<Vec<Track>, String> {
+async fn search_youtube_raw(query: &str, _client: &reqwest::Client, proxy: Option<&str>) -> Result<Vec<Track>, String> {
     let exe = find_ytdlp();
     let mut cmd = std::process::Command::new(&exe);
     #[cfg(target_os = "windows")]
@@ -1935,6 +2002,12 @@ async fn search_youtube_raw(query: &str, _client: &reqwest::Client) -> Result<Ve
         use std::os::windows::process::CommandExt;
         const CREATE_NO_WINDOW: u32 = 0x08000000;
         cmd.creation_flags(CREATE_NO_WINDOW);
+    }
+    if let Some(p) = proxy {
+        let p_trimmed = p.trim();
+        if !p_trimmed.is_empty() {
+            cmd.arg("--proxy").arg(p_trimmed);
+        }
     }
     
     let output = cmd
@@ -2241,13 +2314,20 @@ async fn get_artist_platform_stats(artist_name: String, state: tauri::State<'_, 
         return Ok(stats);
     }
 
-    if let Ok(client_id) = fetch_soundcloud_client_id_cached(&state).await {
+    let proxy_str = if let Ok(guard) = state.proxy_url.lock() {
+        guard.clone()
+    } else {
+        None
+    };
+    let client = get_client_with_proxy(&state.http_client, proxy_str.as_deref());
+
+    if let Ok(client_id) = fetch_soundcloud_client_id_cached(&client, &state).await {
         let url = format!(
             "https://api-v2.soundcloud.com/search/users?q={}&client_id={}&limit=5",
             urlencoding::encode(&artist_name),
             client_id
         );
-        if let Ok(res) = state.http_client.get(&url)
+        if let Ok(res) = client.get(&url)
             .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0 Safari/537.36")
             .send().await {
             if let Ok(json) = res.json::<serde_json::Value>().await {
@@ -2373,9 +2453,16 @@ async fn get_vk_stream(track_id: String, title: Option<String>, artist: Option<S
         return get_youtube_stream(track_id, state).await;
     }
 
+    let proxy_str = if let Ok(guard) = state.proxy_url.lock() {
+        guard.clone()
+    } else {
+        None
+    };
+    let client = get_client_with_proxy(&state.http_client, proxy_str.as_deref());
+
     // 1. Query VK API audio.getById directly to get the official original VK audio stream URL
     if let Some(tok) = &token {
-        if let Some(vk_url) = get_vk_audio_by_id_stream(&track_id, tok, &state.http_client).await {
+        if let Some(vk_url) = get_vk_audio_by_id_stream(&track_id, tok, &client).await {
             return Ok(vk_url);
         }
     }
@@ -3089,47 +3176,63 @@ async fn get_risazatvorchestvo_releases(limit: Option<u32>, state: tauri::State<
     let url = "https://risazatvorchestvo.com/releases";
     let mut html = String::new();
 
-    // 1. Try reqwest with full desktop browser headers
-    if let Ok(res) = state.http_client.get(url)
-        .timeout(std::time::Duration::from_secs(6))
-        .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36")
-        .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8")
-        .header("Accept-Language", "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7")
-        .send().await {
-            if let Ok(text) = res.text().await {
-                if text.len() > 50000 {
-                    html = text;
-                }
-            }
+    let proxy_str = if let Ok(guard) = state.proxy_url.lock() {
+        guard.clone()
+    } else {
+        None
+    };
+
+    // 1. Try curl first as it is generally faster and bypasses Cloudflare
+    let mut cmd = if cfg!(target_os = "windows") {
+        std::process::Command::new("curl.exe")
+    } else {
+        std::process::Command::new("curl")
+    };
+    cmd.args(&[
+        "-s", "-L", "--max-time", "4", url,
+        "-H", "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+        "-H", "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+        "-H", "Accept-Language: ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7"
+    ]);
+    if let Some(ref p) = proxy_str {
+        if !p.trim().is_empty() {
+            cmd.arg("-x").arg(p.trim());
+        }
+    }
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
     }
 
-    // 2. Fallback to curl.exe without opening any console window on Windows
-    if html.len() < 50000 {
-        let mut cmd = std::process::Command::new("curl.exe");
-        cmd.args(&[
-            "-s", "-L", "--max-time", "6", url,
-            "-H", "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-            "-H", "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-            "-H", "Accept-Language: ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7"
-        ]);
-        #[cfg(target_os = "windows")]
-        {
-            use std::os::windows::process::CommandExt;
-            cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW: completely hides cmd window!
-        }
-
-        if let Ok(output) = cmd.output() {
-            if let Ok(text) = String::from_utf8(output.stdout) {
-                if text.len() > 50000 {
-                    html = text;
-                }
+    if let Ok(output) = cmd.output() {
+        if let Ok(text) = String::from_utf8(output.stdout) {
+            if text.len() > 50000 {
+                html = text;
             }
+        }
+    }
+
+    // 2. Fallback to reqwest with a shorter 3-second timeout if curl failed/wasn't found
+    if html.len() < 50000 {
+        let client = get_client_with_proxy(&state.http_client, proxy_str.as_deref());
+        if let Ok(res) = client.get(url)
+            .timeout(std::time::Duration::from_secs(3))
+            .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36")
+            .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8")
+            .header("Accept-Language", "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7")
+            .send().await {
+                if let Ok(text) = res.text().await {
+                    if text.len() > 50000 {
+                        html = text;
+                    }
+                }
         }
     }
 
     let mut tracks = Vec::new();
     if !html.is_empty() {
-        let matches_re = regex::Regex::new(r#"data\\?":\{([^\n]*?type\\?":\\?"(?:track|album)\\?".*?)(?=\},"|\}\]\})"#).unwrap();
+        let matches_re = regex::Regex::new(r#"data\\?":\{([^\n]*?type\\?":\\?"(?:track|album)\\?".*?)\}(?:,\\?"|\\?\}\\]\\?})"#).unwrap();
         let id_re = regex::Regex::new(r#""id":"(\d+)""#).unwrap();
         let type_re = regex::Regex::new(r#""type":"([^"]+)""#).unwrap();
         let title_re = regex::Regex::new(r#""title":"([^"]+)""#).unwrap();
@@ -3283,6 +3386,17 @@ fn get_default_rzt_releases() -> Vec<Track> {
     ]
 }
 
+#[tauri::command]
+fn set_proxy_url(proxy: String, state: tauri::State<'_, AppState>) {
+    if let Ok(mut guard) = state.proxy_url.lock() {
+        if proxy.trim().is_empty() {
+            *guard = None;
+        } else {
+            *guard = Some(proxy.trim().to_string());
+        }
+    }
+}
+
 pub fn run() {
     let http_client = reqwest::Client::builder()
         .pool_max_idle_per_host(25)
@@ -3300,6 +3414,7 @@ pub fn run() {
             http_client,
             soundcloud_client_id: Mutex::new(None),
             stream_cache: Mutex::new(std::collections::HashMap::new()),
+            proxy_url: Mutex::new(None),
         })
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
@@ -3342,7 +3457,8 @@ pub fn run() {
             vk_add_audio,
             get_lastfm_recommendations,
             get_lastfm_new_releases,
-            get_risazatvorchestvo_releases
+            get_risazatvorchestvo_releases,
+            set_proxy_url
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

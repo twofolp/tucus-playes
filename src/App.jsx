@@ -443,6 +443,26 @@ function App() {
   const [autoFetchLyrics, setAutoFetchLyrics] = useState(localStorage.getItem("auto_fetch_lyrics") !== "false");
   const [discordRpcEnabled, setDiscordRpcEnabled] = useState(localStorage.getItem("discord_rpc_enabled") !== "false");
   const [proxyServer, setProxyServer] = useState(localStorage.getItem("proxy_server") || "");
+
+  // Background customization states
+  const [bgType, setBgType] = useState(() => {
+    const val = localStorage.getItem("bg_type");
+    return val && val !== "undefined" ? val : "blur";
+  });
+  const [bgUrl, setBgUrl] = useState(() => {
+    const val = localStorage.getItem("bg_url");
+    return val && val !== "undefined" ? val : "";
+  });
+  const [bgBlur, setBgBlur] = useState(() => {
+    const val = localStorage.getItem("bg_blur");
+    const num = val ? parseInt(val, 10) : 20;
+    return isNaN(num) ? 20 : num;
+  });
+  const [panelOpacity, setPanelOpacity] = useState(() => {
+    const val = localStorage.getItem("panel_opacity");
+    const num = val ? parseFloat(val) : 0.035;
+    return isNaN(num) ? 0.035 : num;
+  });
   const [searchQuery, setSearchQuery] = useState("");
   const [searchSource, setSearchSource] = useState("all");
   const [searchMode, setSearchMode] = useState("tracks"); // "tracks" | "lyrics" | "mood"
@@ -691,7 +711,36 @@ function App() {
   const getActiveAudio = () => activePlayer === 1 ? audio1Ref.current : audio2Ref.current;
   const getBgAudio = () => activePlayer === 1 ? audio2Ref.current : audio1Ref.current;
 
-  useEffect(() => { document.body.className = `theme-${theme}`; localStorage.setItem("app_theme", theme); }, [theme]);
+  useEffect(() => {
+    if (document.body) {
+      document.body.className = `theme-${theme}`;
+      localStorage.setItem("app_theme", theme);
+    }
+  }, [theme]);
+
+  // Dynamic CSS variables for glassmorphism panels based on panelOpacity setting and current theme
+  useEffect(() => {
+    const isDark = theme === "dark";
+    const panelColor = isDark
+      ? `rgba(255, 255, 255, ${panelOpacity})`
+      : `rgba(255, 255, 255, ${Math.min(1, panelOpacity * 8)})`;
+    const cardColor = isDark
+      ? `rgba(255, 255, 255, ${panelOpacity * 1.5})`
+      : `rgba(255, 255, 255, ${Math.min(1, panelOpacity * 10)})`;
+    const borderSubtleColor = isDark
+      ? `rgba(255, 255, 255, ${panelOpacity * 1.2})`
+      : `rgba(0, 0, 0, ${panelOpacity * 1.0})`;
+    const borderMediumColor = isDark
+      ? `rgba(255, 255, 255, ${panelOpacity * 2.3})`
+      : `rgba(0, 0, 0, ${panelOpacity * 2.1})`;
+
+    if (document.body) {
+      document.body.style.setProperty('--bg-panel', panelColor);
+      document.body.style.setProperty('--bg-card', cardColor);
+      document.body.style.setProperty('--border-subtle', borderSubtleColor);
+      document.body.style.setProperty('--border-medium', borderMediumColor);
+    }
+  }, [panelOpacity, theme]);
   
   // Keep both audio elements synchronized in volume and muted state
   useEffect(() => {
@@ -738,6 +787,60 @@ function App() {
       }).catch((e) => console.log("Discord presence error", e));
     }
   }, [currentTrack, isPlaying, duration]);
+
+  // Store latest control references in a ref to avoid stale closures in Media Session handlers
+  const handlersRef = useRef({});
+
+  // Register Media Session action handlers once
+  useEffect(() => {
+    if ("mediaSession" in navigator) {
+      try {
+        navigator.mediaSession.setActionHandler("play", () => {
+          handlersRef.current.togglePlay?.();
+        });
+        navigator.mediaSession.setActionHandler("pause", () => {
+          handlersRef.current.togglePlay?.();
+        });
+        navigator.mediaSession.setActionHandler("previoustrack", () => {
+          handlersRef.current.handlePrev?.();
+        });
+        navigator.mediaSession.setActionHandler("nexttrack", () => {
+          handlersRef.current.handleNextClick?.();
+        });
+      } catch (err) {
+        console.log("Media Session actions setup failed:", err);
+      }
+    }
+  }, []);
+
+  // Update Media Session playback state
+  useEffect(() => {
+    if ("mediaSession" in navigator) {
+      navigator.mediaSession.playbackState = isPlaying ? "playing" : "paused";
+    }
+  }, [isPlaying]);
+
+  // Update Media Session metadata when track changes
+  useEffect(() => {
+    if ("mediaSession" in navigator && window.MediaMetadata && currentTrack) {
+      try {
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: currentTrack.title || "Unknown",
+          artist: currentTrack.artist || "Unknown Artist",
+          album: (currentTrack.source || "Tucus").toUpperCase(),
+          artwork: [
+            {
+              src: currentTrack.thumbnail || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='512' height='512'%3E%3Crect fill='%231a1a2e' width='512' height='512'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%23555' font-size='48'%3E♪%3C/text%3E%3C/svg%3E",
+              sizes: "512x512",
+              type: "image/jpeg"
+            }
+          ]
+        });
+      } catch (err) {
+        console.log("Failed to set MediaMetadata:", err);
+      }
+    }
+  }, [currentTrack]);
 
   // Sync Yandex liked tracks list automatically
   const loadVkHomeData = async () => {
@@ -1008,6 +1111,8 @@ useEffect(() => {
 
   // Fetch charts & releases on app launch and home view
   useEffect(() => {
+    const p = localStorage.getItem("proxy_server") || "";
+    invoke("set_proxy_url", { proxy: p }).catch(e => console.error("Error setting proxy in backend:", e));
     loadHomeData();
   }, []);
 
@@ -1374,6 +1479,14 @@ const getCleanYandexToken = () => {
     localStorage.setItem("auto_fetch_lyrics", autoFetchLyrics ? "true" : "false");
     localStorage.setItem("discord_rpc_enabled", discordRpcEnabled ? "true" : "false");
     localStorage.setItem("proxy_server", proxyServer.trim());
+    localStorage.setItem("bg_type", bgType);
+    localStorage.setItem("bg_url", bgUrl);
+    localStorage.setItem("bg_blur", bgBlur.toString());
+    localStorage.setItem("panel_opacity", panelOpacity.toString());
+    
+    // Sync proxy with backend
+    invoke("set_proxy_url", { proxy: proxyServer.trim() }).catch(e => console.error("Error syncing proxy with backend:", e));
+
     const btn = document.getElementById("save-btn");
     if (btn) { btn.textContent = "Сохранено!"; setTimeout(() => { btn.textContent = "Сохранить настройки"; }, 2000); }
   };
@@ -2354,6 +2467,11 @@ const openSoundCloudArtist = async (userId, artistName) => {
     if (queue[pi]) playTrack(queue[pi], pi);
   };
 
+  // Assign latest functions to handlersRef directly in render scope (below their definition to prevent TDZ error)
+  handlersRef.current.togglePlay = togglePlay;
+  handlersRef.current.handlePrev = handlePrev;
+  handlersRef.current.handleNextClick = handleNextClick;
+
   const handleSeek = (e) => {
     const activeAudio = getActiveAudio();
     if (!activeAudio || !duration) return;
@@ -2416,18 +2534,45 @@ const openSoundCloudArtist = async (userId, artistName) => {
   return (
     <ErrorBoundary>
     <div className="app-root" onClick={() => setSelectedTrackForPlaylist(null)}>
-      <div className="ambient-background-backdrop" style={{
-        position: "absolute",
-        top: 0, left: 0, right: 0, bottom: 0,
-        backgroundImage: currentTrack ? `url(${currentTrack.thumbnail})` : "none",
-        backgroundSize: "80% 80%",
-        backgroundPosition: "center",
-        filter: "blur(140px) saturate(2.4) opacity(0.32)",
-        zIndex: 2,
-        transition: "background-image 1.5s ease-in-out, transform 0.1s ease-out",
-        pointerEvents: "none",
-        transform: "scale(1.2)"
-      }} />
+      {bgType === "blur" && (
+        <div className="ambient-background-backdrop" style={{
+          position: "absolute",
+          top: 0, left: 0, right: 0, bottom: 0,
+          backgroundImage: currentTrack ? `url(${currentTrack.thumbnail})` : "none",
+          backgroundSize: "80% 80%",
+          backgroundPosition: "center",
+          filter: "blur(140px) saturate(2.4) opacity(0.32)",
+          zIndex: 2,
+          transition: "background-image 1.5s ease-in-out, transform 0.1s ease-out",
+          pointerEvents: "none",
+          transform: "scale(1.2)"
+        }} />
+      )}
+
+      {bgType === "custom" && bgUrl && (
+        <div className="custom-background-wallpaper" style={{
+          position: "absolute",
+          top: 0, left: 0, right: 0, bottom: 0,
+          backgroundImage: `url(${bgUrl})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          filter: `blur(${bgBlur}px)`,
+          zIndex: 2,
+          transition: "filter 0.3s ease, background-image 0.5s ease",
+          pointerEvents: "none",
+          transform: "scale(1.05)"
+        }} />
+      )}
+
+      {bgType === "color" && bgUrl && (
+        <div className="custom-background-color" style={{
+          position: "absolute",
+          top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: bgUrl,
+          zIndex: 2,
+          pointerEvents: "none"
+        }} />
+      )}
       <div className="liquid-bg" aria-hidden="true" style={{ zIndex: 1 }}>
         <div className="blob blob-1"/><div className="blob blob-2"/><div className="blob blob-3"/>
       </div>
@@ -3261,7 +3406,7 @@ const openSoundCloudArtist = async (userId, artistName) => {
                             const isAlbum = t.explanation?.includes("is_album:1") || t.type === "album";
                             const albumId = t.artist_id || t.explanation?.match(/yandex_album:(\d+)/)?.[1];
                             if (isAlbum && albumId) {
-                              onSelectAlbum({
+                              openAlbum({
                                 id: albumId,
                                 title: t.title,
                                 artist: t.artist,
@@ -4280,7 +4425,7 @@ const openSoundCloudArtist = async (userId, artistName) => {
                     <div className="settings-card">
                       <div className="settings-card__title">Внешний вид</div>
                       <p className="settings-card__desc">Выберите цветовую тему оформления интерфейса Tucus.</p>
-                      <div className="theme-grid">
+                      <div className="theme-grid" style={{ marginBottom: 24 }}>
                         <div className={`theme-card ${theme==="dark"?"theme-card--active":""}`} onClick={()=>setTheme("dark")}>
                           <div className="theme-card__preview" style={{ background: "#08080c" }}/>
                           <div className="theme-card__name">Тёмная (Рекомендуется)</div>
@@ -4289,6 +4434,48 @@ const openSoundCloudArtist = async (userId, artistName) => {
                           <div className="theme-card__preview" style={{ background: "#f3f4f8", border: "1px solid rgba(0,0,0,0.08)" }}/>
                           <div className="theme-card__name">Светлая</div>
                         </div>
+                      </div>
+
+                      <div className="settings-card__title" style={{ marginTop: 28 }}>Кастомизация фона</div>
+                      <p className="settings-card__desc">Настройте задний план плеера в стиле Dotify.</p>
+                      
+                      <div style={{ display: "flex", gap: 10, marginTop: 12, marginBottom: 16 }}>
+                        <button type="button" className="save-btn" onClick={() => setBgType("blur")} style={{ background: bgType === "blur" ? "var(--text-primary)" : "var(--bg-card)", color: bgType === "blur" ? "var(--bg-primary)" : "var(--text-primary)", border: "1px solid var(--border-medium)", padding: "8px 16px", borderRadius: 10, fontSize: 12, fontWeight: "600", transition: "all 0.2s" }}>
+                          Адаптивный блюр
+                        </button>
+                        <button type="button" className="save-btn" onClick={() => setBgType("custom")} style={{ background: bgType === "custom" ? "var(--text-primary)" : "var(--bg-card)", color: bgType === "custom" ? "var(--bg-primary)" : "var(--text-primary)", border: "1px solid var(--border-medium)", padding: "8px 16px", borderRadius: 10, fontSize: 12, fontWeight: "600", transition: "all 0.2s" }}>
+                          Кастомные обои (Фото/GIF)
+                        </button>
+                        <button type="button" className="save-btn" onClick={() => setBgType("color")} style={{ background: bgType === "color" ? "var(--text-primary)" : "var(--bg-card)", color: bgType === "color" ? "var(--bg-primary)" : "var(--text-primary)", border: "1px solid var(--border-medium)", padding: "8px 16px", borderRadius: 10, fontSize: 12, fontWeight: "600", transition: "all 0.2s" }}>
+                          Цвет фона
+                        </button>
+                      </div>
+
+                      {bgType !== "blur" && (
+                        <div style={{ marginBottom: 20 }}>
+                          <label style={{ display: "block", fontSize: 13, fontWeight: "600", marginBottom: 8, color: "var(--text-primary)" }}>
+                            {bgType === "custom" ? "Ссылка на фоновое изображение или GIF (URL)" : "Цвет фона (HEX / RGB)"}
+                          </label>
+                          <input className="settings-input" style={{ width: "100%" }} type="text" placeholder={bgType === "custom" ? "Пример: https://i.imgur.com/example.gif" : "Пример: #121216"} value={bgUrl} onChange={e => setBgUrl(e.target.value)} onClick={e => e.stopPropagation()} />
+                        </div>
+                      )}
+
+                      {bgType === "custom" && (
+                        <div style={{ marginBottom: 20 }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+                            <span style={{ fontSize: 13, fontWeight: "600", color: "var(--text-primary)" }}>Размытие фона (Blur)</span>
+                            <span style={{ fontSize: 13, opacity: 0.6 }}>{bgBlur}px</span>
+                          </div>
+                          <input type="range" min="0" max="80" value={bgBlur} onChange={e => setBgBlur(parseInt(e.target.value, 10))} onClick={e => e.stopPropagation()} style={{ width: "100%", height: 6, borderRadius: 3, outline: "none", accentColor: "var(--accent)" }} />
+                        </div>
+                      )}
+
+                      <div style={{ marginBottom: 12 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+                          <span style={{ fontSize: 13, fontWeight: "600", color: "var(--text-primary)" }}>Непрозрачность панелей (Opacity)</span>
+                          <span style={{ fontSize: 13, opacity: 0.6 }}>{Math.round(panelOpacity * 100)}%</span>
+                        </div>
+                        <input type="range" min="1" max="100" value={Math.round(panelOpacity * 100)} onChange={e => setPanelOpacity(parseFloat(e.target.value) / 100)} onClick={e => e.stopPropagation()} style={{ width: "100%", height: 6, borderRadius: 3, outline: "none", accentColor: "var(--accent)" }} />
                       </div>
                     </div>
                   )}
