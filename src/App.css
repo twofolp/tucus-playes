@@ -3199,7 +3199,7 @@ input {
   box-shadow: var(--shadow-panel);
 }
 
-/* Page and playlist scrolling fixes with smooth glide physics */
+/* Page and playlist scrolling fixes */
 .main-content > div,
 .home-view,
 .search-results-view,
@@ -3214,7 +3214,6 @@ input {
   overflow-y: auto;
   min-height: 0;
   padding-right: 6px;
-  scroll-behavior: smooth !important;
   overscroll-behavior-y: contain;
   -webkit-overflow-scrolling: touch;
 }
@@ -3236,9 +3235,9 @@ input {
 .artist-detail-view::-webkit-scrollbar-thumb,
 .settings-view::-webkit-scrollbar-thumb,
 .track-list::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.15);
   border-radius: 999px;
-  transition: background 0.3s ease, box-shadow 0.3s ease;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
 }
 
 .main-content > div::-webkit-scrollbar-thumb:hover,
@@ -3248,8 +3247,8 @@ input {
 .artist-detail-view::-webkit-scrollbar-thumb:hover,
 .settings-view::-webkit-scrollbar-thumb:hover,
 .track-list::-webkit-scrollbar-thumb:hover {
-  background: rgba(168, 85, 247, 0.6);
-  box-shadow: 0 0 10px rgba(168, 85, 247, 0.5);
+  background: rgba(255, 255, 255, 0.35);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
 }
 
 /* Gentle sliding transition on view change */

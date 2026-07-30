@@ -620,69 +620,6 @@ function App() {
   const homeViewRef = useRef(null);
   const mainContentRef = useRef(null);
 
-  // Silky Smooth LERP Kinetic Scroll Engine for Mouse Wheel
-  useEffect(() => {
-    const mainEl = mainContentRef.current;
-    if (!mainEl) return;
-
-    let animId = null;
-    let targetY = 0;
-    let activeScrollEl = null;
-
-    const lerpScrollLoop = () => {
-      if (!activeScrollEl) return;
-      const current = activeScrollEl.scrollTop;
-      const diff = targetY - current;
-
-      if (Math.abs(diff) > 0.4) {
-        activeScrollEl.scrollTop = current + diff * 0.15; // Smooth 15% LERP per 60FPS frame
-        animId = requestAnimationFrame(lerpScrollLoop);
-      } else {
-        activeScrollEl.scrollTop = targetY;
-        animId = null;
-        activeScrollEl = null;
-      }
-    };
-
-    const handleWheel = (e) => {
-      if (e.ctrlKey || e.shiftKey) return;
-
-      // Find the active scrollable container
-      let scrollTarget = mainEl;
-      let p = e.target;
-      while (p && p !== mainEl) {
-        const style = window.getComputedStyle(p);
-        if ((style.overflowY === "auto" || style.overflowY === "scroll") && p.scrollHeight > p.clientHeight + 4) {
-          scrollTarget = p;
-          break;
-        }
-        p = p.parentElement;
-      }
-
-      if (!scrollTarget || scrollTarget.scrollHeight <= scrollTarget.clientHeight) return;
-
-      e.preventDefault();
-      const maxScroll = scrollTarget.scrollHeight - scrollTarget.clientHeight;
-      
-      if (activeScrollEl !== scrollTarget) {
-        activeScrollEl = scrollTarget;
-        targetY = scrollTarget.scrollTop;
-      }
-
-      targetY = Math.max(0, Math.min(maxScroll, targetY + e.deltaY * 1.45));
-
-      if (!animId) {
-        animId = requestAnimationFrame(lerpScrollLoop);
-      }
-    };
-
-    mainEl.addEventListener("wheel", handleWheel, { passive: false });
-    return () => {
-      mainEl.removeEventListener("wheel", handleWheel);
-      if (animId) cancelAnimationFrame(animId);
-    };
-  }, []);
-
   // Preload next track refs
   const preloadTimeoutRef = useRef(null);
   const preloadedTrackRef = useRef(null);
