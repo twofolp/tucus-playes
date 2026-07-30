@@ -5128,7 +5128,7 @@ input {
 }
 
 /* ==========================================================================
-   Logo Pulsation Splash Screen (Top -> Mid -> Bot Wave)
+   Minimalist Pure Logo Splash Screen
    ========================================================================== */
 .splash-overlay {
   position: fixed;
@@ -5140,7 +5140,7 @@ input {
   justify-content: center;
   user-select: none;
   opacity: 1;
-  transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1);
   overflow: hidden;
 }
 
@@ -5151,18 +5151,18 @@ input {
 
 .splash-glow {
   position: absolute;
-  width: 440px;
-  height: 440px;
+  width: 400px;
+  height: 400px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(168, 85, 247, 0.22) 0%, rgba(139, 92, 246, 0.06) 45%, transparent 70%);
-  filter: blur(50px);
-  animation: splashPulseGlow 2.5s ease-in-out infinite alternate;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.06) 0%, rgba(168, 85, 247, 0.03) 50%, transparent 70%);
+  filter: blur(60px);
+  animation: splashSoftGlow 2.5s ease-in-out infinite alternate;
   pointer-events: none;
 }
 
-@keyframes splashPulseGlow {
-  0% { transform: scale(0.85); opacity: 0.4; }
-  100% { transform: scale(1.15); opacity: 0.85; }
+@keyframes splashSoftGlow {
+  0% { transform: scale(0.85); opacity: 0.3; }
+  100% { transform: scale(1.15); opacity: 0.7; }
 }
 
 .splash-content {
@@ -5171,116 +5171,68 @@ input {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 20px;
+  gap: 22px;
 }
 
-/* Logo Card with Pulse Overlay */
-.splash-logo-card {
-  position: relative;
-  width: 96px;
-  height: 96px;
-  border-radius: 26px;
-  padding: 8px;
-  background: rgba(22, 22, 30, 0.85);
-  backdrop-filter: blur(28px) saturate(1.8);
-  -webkit-backdrop-filter: blur(28px) saturate(1.8);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.75), 0 0 35px rgba(168, 85, 247, 0.2);
+/* Pure Logo Image Wrapper - NO FRAMES, NO BORDERS, NO CARDS */
+.splash-logo-pure-wrap {
+  width: 90px;
+  height: 90px;
   display: flex;
   align-items: center;
   justify-content: center;
-  animation: logoCardPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  animation: splashPureLogoWave 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite alternate;
 }
 
-@keyframes logoCardPop {
-  0% { opacity: 0; transform: scale(0.75); }
-  100% { opacity: 1; transform: scale(1); }
+@keyframes splashPureLogoWave {
+  0% {
+    transform: scale(0.92);
+    filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.15));
+  }
+  50% {
+    transform: scale(1.05);
+    filter: drop-shadow(0 0 24px rgba(168, 85, 247, 0.35));
+  }
+  100% {
+    transform: scale(0.96);
+    filter: drop-shadow(0 0 16px rgba(255, 255, 255, 0.2));
+  }
 }
 
-.splash-logo-main {
+.splash-logo-pure {
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  border-radius: 20px;
+  object-fit: contain;
 }
 
-/* 3-Level Wave Overlay (Top -> Mid -> Bot) */
-.splash-pulse-overlay {
-  position: absolute;
-  inset: 0;
-  border-radius: 26px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 10px 14px;
-  pointer-events: none;
-}
-
-.splash-pulse-bar {
-  width: 100%;
-  height: 6px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 0 12px rgba(255, 255, 255, 0.8), 0 0 20px rgba(168, 85, 247, 0.6);
-  opacity: 0.2;
-  transform: scaleX(0.4);
-  transform-origin: center;
-}
-
-.splash-pulse-top {
-  animation: barWavePulse 0.9s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-  animation-delay: 0.0s;
-}
-
-.splash-pulse-mid {
-  animation: barWavePulse 0.9s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-  animation-delay: 0.25s;
-}
-
-.splash-pulse-bot {
-  animation: barWavePulse 0.9s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-  animation-delay: 0.5s;
-}
-
-@keyframes barWavePulse {
-  0% { opacity: 0.15; transform: scaleX(0.3) scaleY(1); }
-  40% { opacity: 1; transform: scaleX(1.05) scaleY(1.6); }
-  80% { opacity: 0.2; transform: scaleX(0.4) scaleY(1); }
-  100% { opacity: 0.15; transform: scaleX(0.3) scaleY(1); }
-}
-
-/* Welcome Text Block */
+/* Welcome Typography */
 .splash-welcome-box {
   display: flex;
   flex-direction: column;
   align-items: center;
-  animation: splashTextFadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards;
-  opacity: 0;
-  transform: translateY(10px);
+  animation: splashTextAppear 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-@keyframes splashTextFadeIn {
+@keyframes splashTextAppear {
   0% { opacity: 0; transform: translateY(10px); }
   100% { opacity: 1; transform: translateY(0); }
 }
 
 .splash-welcome-title {
-  font-size: 26px;
-  font-weight: 900;
-  letter-spacing: 4px;
-  background: linear-gradient(135deg, #ffffff 0%, #f3e8ff 50%, #c084fc 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 5px;
+  color: #ffffff;
   text-transform: uppercase;
 }
 
 .splash-welcome-subtitle {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
-  letter-spacing: 5px;
-  color: rgba(255, 255, 255, 0.55);
+  letter-spacing: 6px;
+  color: rgba(255, 255, 255, 0.45);
   text-transform: lowercase;
-  margin-top: 2px;
+  margin-top: 3px;
 }
 
 

@@ -6,16 +6,16 @@ export default function SplashScreen({ onFinish }) {
   const [done, setDone] = useState(false);
 
   useEffect(() => {
-    // Start fadeout after wave sequence completes (~1500ms)
+    // Start smooth fadeout at ~1600ms
     const t1 = setTimeout(() => {
       setFadeout(true);
-    }, 1550);
+    }, 1600);
 
-    // Unmount and notify parent (~1950ms)
+    // Complete unmount at ~2050ms
     const t2 = setTimeout(() => {
       setDone(true);
       if (onFinish) onFinish();
-    }, 1950);
+    }, 2050);
 
     return () => {
       clearTimeout(t1);
@@ -27,23 +27,16 @@ export default function SplashScreen({ onFinish }) {
 
   return (
     <div className={`splash-overlay ${fadeout ? "splash-overlay--fadeout" : ""}`}>
-      {/* Background Glow */}
+      {/* Ambient background glow */}
       <div className="splash-glow" />
 
       <div className="splash-content">
-        {/* Main Logo Card with 3-Level Bar Pulse Wave Overlay */}
-        <div className="splash-logo-card">
-          <img src="/tucus_logo.png" alt="Tucus" className="splash-logo-main" />
-
-          {/* Sequential 3-Bar Pulse Wave (Top -> Middle -> Bottom) */}
-          <div className="splash-pulse-overlay">
-            <div className="splash-pulse-bar splash-pulse-top" />
-            <div className="splash-pulse-bar splash-pulse-mid" />
-            <div className="splash-pulse-bar splash-pulse-bot" />
-          </div>
+        {/* Pure original logo floating with smooth wave motion (NO card, NO frame, NO overlay) */}
+        <div className="splash-logo-pure-wrap">
+          <img src="/tucus_logo.png" alt="Tucus" className="splash-logo-pure" />
         </div>
 
-        {/* Welcome Typography */}
+        {/* Minimalist Welcome Typography */}
         <div className="splash-welcome-box">
           <div className="splash-welcome-title">TUCUS</div>
           <div className="splash-welcome-subtitle">welcome</div>
