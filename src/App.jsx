@@ -456,6 +456,7 @@ function App() {
   const [discordRpcEnabled, setDiscordRpcEnabled] = useState(localStorage.getItem("discord_rpc_enabled") !== "false");
   const [proxyServer, setProxyServer] = useState(localStorage.getItem("proxy_server") || "");
 
+
   // Background customization states
   const [bgType, setBgType] = useState(() => {
     const val = localStorage.getItem("bg_type");
@@ -1179,6 +1180,9 @@ useEffect(() => {
       fetchSimilarForNowPlaying(currentTrack);
     }
   }, [currentTrack, autoFetchLyrics]);
+
+
+
 
   useEffect(() => {
     if (showTranslation && lyrics.length > 0 && lyrics.some(l => !l.translation) && !isTranslating) {
@@ -4317,6 +4321,8 @@ const openSoundCloudArtist = async (userId, artistName) => {
             />
           )}
 
+
+
           {activeView === "vkhome" && (
             <div className="vk-home-view" style={{ padding: "10px 0 40px 0" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24, flexWrap: "wrap", gap: 16 }}>
@@ -4631,6 +4637,8 @@ const openSoundCloudArtist = async (userId, artistName) => {
                       </div>
                     </div>
                   )}
+
+
 
                   {settingsSubTab === "shortcuts" && (
                     <div className="settings-card">

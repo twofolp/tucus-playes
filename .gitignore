@@ -49,3 +49,4 @@ start-claude.bat
 start-claude.ps1
 start-proxy.ps1
 _fix.py
+script_*.js

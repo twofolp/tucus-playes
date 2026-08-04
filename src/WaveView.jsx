@@ -45,8 +45,6 @@ function WaveView({
 
   const thumbnail = currentTrack.thumbnail || "";
 
-  const currentAiQuote = currentTrack.explanation || currentTrack.reason || "";
-
   return (
     <div style={{
       position: "absolute",
@@ -116,17 +114,17 @@ function WaveView({
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        gap: "20px",
+        gap: "24px",
         position: "relative",
         zIndex: 2,
-        padding: "32px",
+        padding: "40px",
         transition: "width 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
       }}>
         {/* Album Art */}
         <div style={{
           position: "relative",
-          width: showLyricsPanel && lyrics && lyrics.length > 0 ? "320px" : "340px",
-          height: showLyricsPanel && lyrics && lyrics.length > 0 ? "320px" : "340px",
+          width: showLyricsPanel && lyrics && lyrics.length > 0 ? "300px" : "360px",
+          height: showLyricsPanel && lyrics && lyrics.length > 0 ? "300px" : "360px",
           flexShrink: 0,
           transition: "all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
         }}>
@@ -304,7 +302,7 @@ function WaveView({
         </div>
 
         {/* Like / Dislike / Lyrics toggle */}
-        <div style={{ display: "flex", gap: "20px", alignItems: "center" }}>
+        <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
           <button
             onClick={() => toggleLike(currentTrack)}
             style={{
@@ -356,7 +354,6 @@ function WaveView({
             </button>
           )}
         </div>
-
       </div>
 
       {/* RIGHT: Lyrics */}

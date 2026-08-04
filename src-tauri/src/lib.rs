@@ -58,6 +58,7 @@ pub struct Track {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
+
 #[serde(rename_all = "camelCase")]
 pub struct YandexAlbum {
     pub id: String,
@@ -1584,6 +1585,9 @@ async fn get_soundcloud_similar(track_id: String, state: tauri::State<'_, AppSta
     
     Ok(tracks)
 }
+
+
+
 
 #[tauri::command]
 async fn search_yandex_all(query: String, token: String, state: tauri::State<'_, AppState>) -> Result<YandexSearchAllResults, String> {
@@ -3533,6 +3537,7 @@ pub fn run() {
             delete_cached_track,
             get_soundcloud_similar,
             get_yandex_playlist_info,
+
             search_youtube,
             get_youtube_stream,
             get_artist_platform_stats,
